@@ -54,7 +54,7 @@ describe("getDefaultSttModel", () => {
     );
     expect(getDefaultSttModel("groq")).toBe("whisper-large-v3-turbo");
     expect(getDefaultSttModel("openrouter")).toBe("openai/gpt-transcribe");
-    expect(getDefaultSttModel("speko")).toBe("auto-balanced");
+    expect(getDefaultSttModel("speko")).toBe("key-settings");
     expect(getDefaultSttModel("xai")).toBe("xai-stt");
     expect(getDefaultSttModel("smallestai")).toBe("pulse");
     expect(getDefaultSttModel("nari")).toBe("qwen3-asr-fast:free");

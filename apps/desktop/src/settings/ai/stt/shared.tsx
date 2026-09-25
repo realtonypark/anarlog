@@ -73,6 +73,7 @@ const OPENROUTER_MODEL_LABELS: Record<string, string> = {
 };
 
 const SPEKO_MODEL_LABELS: Record<string, string> = {
+  "key-settings": "Key settings",
   "auto-balanced": "Auto · Balanced",
   "auto-quality": "Auto · Quality",
   "auto-latency": "Auto · Latency",
@@ -553,7 +554,13 @@ const _PROVIDERS = [
     badge: "After recording",
     icon: <ProviderBrandImage src="/assets/speko-mark.svg" alt="Speko" />,
     baseUrl: "https://router.speko.dev",
-    models: ["auto-balanced", "auto-quality", "auto-latency", "auto-cost"],
+    models: [
+      "key-settings",
+      "auto-balanced",
+      "auto-quality",
+      "auto-latency",
+      "auto-cost",
+    ],
     requirements: [{ kind: "requires_config", fields: ["api_key"] }],
     links: {
       models: {

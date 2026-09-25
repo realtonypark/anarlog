@@ -14,7 +14,7 @@ const DEFAULT_EXTERNAL_STT_MODELS: Record<string, string> = {
   assemblyai: "universal-3-5-pro",
   openai: "gpt-live-transcribe",
   openrouter: "openai/gpt-transcribe",
-  speko: "auto-balanced",
+  speko: "key-settings",
   cartesia: "ink-2",
   cloudflare_workers_ai: "nova-3",
   gladia: "solaria-1",

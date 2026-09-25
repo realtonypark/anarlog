@@ -76,12 +76,37 @@ struct SpekoBatchResponse {
 
 const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
 
-fn objective(model: Option<&str>) -> &'static str {
+// `key-settings` (and any unknown model) sends no routing, language, or options
+// so the preset saved on the Speko API key applies: its language, objective, and
+// model chain. The `auto-*` models override the key's objective and ask for
+// speaker labels, but still leave the language to the key.
+fn objective(model: Option<&str>) -> Option<&'static str> {
     match model {
-        Some("auto-quality") => "quality",
-        Some("auto-latency") => "latency",
-        Some("auto-cost") => "cost",
-        _ => "balanced",
+        Some("auto-balanced") => Some("balanced"),
+        Some("auto-quality") => Some("quality"),
+        Some("auto-latency") => Some("latency"),
+        Some("auto-cost") => Some("cost"),
+        _ => None,
+    }
+}
+
+fn initial_request(model: Option<&str>) -> serde_json::Value {
+    match objective(model) {
+        Some(objective) => serde_json::json!({
+            "routing": { "mode": "auto", "objective": objective },
+            "options": { "diarization": true },
+        }),
+        None => serde_json::json!({}),
+    }
+}
+
+impl SpekoBatchResponse {
+    fn is_empty(&self) -> bool {
+        self.text.trim().is_empty()
+            && self
+                .segments
+                .iter()
+                .all(|segment| segment.text.trim().is_empty())
     }
 }
 
@@ -116,17 +141,25 @@ async fn do_transcribe_file(
         .map_err(|e| Error::AudioProcessing(e.to_string()))??
         .into();
 
-    let mut request = serde_json::json!({
-        "routing": { "mode": "auto", "objective": objective(params.model.as_deref()) },
-        "options": { "diarization": true },
-    });
-    if let Some(language) = params.languages.first() {
-        request["language"] = language.iso639().code().into();
-    }
-
+    let mut request = initial_request(params.model.as_deref());
     let mut retried_unavailable = false;
+    let mut retried_empty = false;
     loop {
         match send(client, &url, api_key, &request, &wav).await {
+            // Some upstream models answer 200 with no text (seen with Modulate on
+            // Korean audio), which Speko does not treat as a failure. Retry once
+            // without that provider; `routing` requires a mode, so the key's
+            // preset chain gives way to auto routing but its language still applies.
+            Ok(response) if response.is_empty() && !retried_empty => {
+                let Some(route) = response.route.as_ref() else {
+                    return Ok(convert_response(response));
+                };
+                retried_empty = true;
+                if request.get("routing").is_none() {
+                    request["routing"] = serde_json::json!({ "mode": "auto" });
+                }
+                request["routing"]["deny_providers"] = serde_json::json!([route.provider]);
+            }
             // Diarization narrows routing to the few models that support it; fall
             // back to an undiarized transcript rather than failing the request.
             Err(Error::UnexpectedStatus { status, body })
@@ -146,7 +179,7 @@ async fn do_transcribe_file(
                 retried_unavailable = true;
                 tokio::time::sleep(RETRY_DELAY).await;
             }
-            result => return result,
+            result => return result.map(convert_response),
         }
     }
 }
@@ -157,7 +190,7 @@ async fn send(
     api_key: &str,
     request: &serde_json::Value,
     wav: &bytes::Bytes,
-) -> Result<BatchResponse, Error> {
+) -> Result<SpekoBatchResponse, Error> {
     // Speko hashes parts in order for idempotency, so `request` must precede `audio`.
     let form = Form::new()
         .part(
@@ -185,7 +218,7 @@ async fn send(
 
     let status = response.status();
     if status.is_success() {
-        Ok(convert_response(response.json().await?))
+        Ok(response.json().await?)
     } else {
         Err(Error::UnexpectedStatus {
             status,
@@ -300,16 +333,23 @@ mod tests {
     }
 
     #[test]
-    fn maps_models_to_routing_objectives() {
-        for (model, expected) in [
-            (Some("auto-balanced"), "balanced"),
-            (Some("auto-quality"), "quality"),
-            (Some("auto-latency"), "latency"),
-            (Some("auto-cost"), "cost"),
-            (Some("nova-3"), "balanced"),
-            (None, "balanced"),
+    fn builds_requests_that_leave_the_language_to_the_key() {
+        for model in [None, Some("key-settings"), Some("nova-3")] {
+            assert_eq!(initial_request(model), serde_json::json!({}), "{model:?}");
+        }
+        for (model, objective) in [
+            ("auto-balanced", "balanced"),
+            ("auto-quality", "quality"),
+            ("auto-latency", "latency"),
+            ("auto-cost", "cost"),
         ] {
-            assert_eq!(objective(model), expected, "{model:?}");
+            assert_eq!(
+                initial_request(Some(model)),
+                serde_json::json!({
+                    "routing": { "mode": "auto", "objective": objective },
+                    "options": { "diarization": true },
+                })
+            );
         }
     }
 
@@ -495,7 +535,7 @@ mod tests {
         assert_eq!(requests.len(), 2);
         let first = String::from_utf8_lossy(&requests[0].body);
         assert!(first.contains("\"objective\":\"quality\""));
-        assert!(first.contains("\"language\":\"ko\""));
+        assert!(!first.contains("\"language\""));
         assert!(first.find("name=\"request\"") < first.find("name=\"audio\""));
         assert_ne!(
             requests[0].headers.get("idempotency-key"),
@@ -505,6 +545,112 @@ mod tests {
             response.results.channels[0].alternatives[0].transcript,
             "안녕하세요"
         );
+    }
+
+    fn request_json(request: &Request) -> serde_json::Value {
+        let body = String::from_utf8_lossy(&request.body);
+        let start = body.find("\r\n\r\n").unwrap() + 4;
+        let end = start + body[start..].find("\r\n--").unwrap();
+        serde_json::from_str(&body[start..end]).unwrap()
+    }
+
+    async fn transcribe_with(server: &MockServer, model: &str) -> BatchResponse {
+        SpekoAdapter
+            .transcribe_file(
+                &create_client(),
+                &server.uri(),
+                "test-key",
+                &ListenParams {
+                    model: Some(model.to_string()),
+                    languages: vec![anlg_language::ISO639::En.into()],
+                    ..Default::default()
+                },
+                anlg_data::english_1::AUDIO_PATH,
+            )
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn retries_empty_results_without_that_provider() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "text": "",
+                "segments": [],
+                "route": { "provider": "modulate", "model": "velma-2-stt-streaming" }
+            })))
+            .up_to_n_times(1)
+            .with_priority(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "text": "안녕하세요",
+                "segments": [{ "text": "안녕하세요", "start_ms": 0, "end_ms": 900 }],
+                "route": { "provider": "meta", "model": "muse-voice-transcribe-1.0" }
+            })))
+            .mount(&server)
+            .await;
+
+        let response = transcribe_with(&server, "key-settings").await;
+
+        let requests = server.received_requests().await.unwrap();
+        assert_eq!(request_json(&requests[0]), serde_json::json!({}));
+        assert_eq!(
+            request_json(&requests[1]),
+            serde_json::json!({ "routing": { "mode": "auto", "deny_providers": ["modulate"] } })
+        );
+        assert_eq!(response.metadata["route_provider"], "meta");
+        assert_eq!(
+            response.results.channels[0].alternatives[0].transcript,
+            "안녕하세요"
+        );
+    }
+
+    #[tokio::test]
+    async fn keeps_the_objective_when_retrying_an_empty_result_and_stops_after_one_retry() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "text": " ",
+                "segments": [{ "text": "", "start_ms": 0, "end_ms": 900 }],
+                "route": { "provider": "modulate", "model": "velma-2-stt-streaming" }
+            })))
+            .mount(&server)
+            .await;
+
+        let response = transcribe_with(&server, "auto-cost").await;
+
+        let requests = server.received_requests().await.unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(
+            request_json(&requests[1]),
+            serde_json::json!({
+                "routing": { "mode": "auto", "objective": "cost", "deny_providers": ["modulate"] },
+                "options": { "diarization": true },
+            })
+        );
+        assert!(
+            response.results.channels[0].alternatives[0]
+                .words
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn does_not_retry_empty_results_without_a_route() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(serde_json::json!({ "text": "" })),
+            )
+            .mount(&server)
+            .await;
+
+        transcribe_with(&server, "key-settings").await;
+
+        assert_eq!(server.received_requests().await.unwrap().len(), 1);
     }
 
     #[tokio::test]

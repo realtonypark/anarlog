@@ -79,7 +79,7 @@ function ProviderContext({ providerId }: { providerId: ProviderId }) {
                 : providerId === "openrouter"
                   ? `Use [OpenRouter](https://openrouter.ai) to transcribe with supported speech-to-text models through one API key. OpenRouter transcription runs after recording.`
                   : providerId === "speko"
-                    ? `Use [Speko Router](https://platform.speko.ai/gateway) to route each recording to the best available speech-to-text model, with automatic failover. Pick an objective to trade quality, latency, and cost. Speko Router transcription runs after recording.`
+                    ? `Use [Speko Router](https://platform.speko.ai/gateway) to route each recording to the best available speech-to-text model, with automatic failover. **Key settings** uses the language, objective, and models saved on your Speko API key. The **Auto** options override the key's objective and add speaker labels; the language always comes from the key. Speko Router transcription runs after recording.`
                     : providerId === "dashscope"
                       ? `Use Alibaba Cloud Model Studio's Qwen ASR for **live transcription**. The default endpoint is the Singapore region; change it under Advanced when your API key belongs to another region.`
                       : providerId === "zai"
