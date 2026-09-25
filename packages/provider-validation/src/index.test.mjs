@@ -211,7 +211,7 @@ for (const [provider, path, header, value, payload] of [
   ],
   [
     "speko",
-    "/v1/v1/models",
+    "/v1/models",
     "Authorization",
     "Bearer synthetic-key",
     { models: [] },
@@ -276,11 +276,13 @@ for (const [provider, path, header, value, payload] of [
 ]) {
   test(`uses ${provider}'s authentication protocol`, async () => {
     const host =
-      provider === "anthropic"
-        ? "api.anthropic.com"
-        : provider === "google_generative_ai"
-          ? "generativelanguage.googleapis.com"
-          : "api.openai.com";
+      provider === "speko"
+        ? "router.speko.dev"
+        : provider === "anthropic"
+          ? "api.anthropic.com"
+          : provider === "google_generative_ai"
+            ? "generativelanguage.googleapis.com"
+            : "api.openai.com";
     await verifyProviderCredentials(
       { ...credential, provider, baseUrl: `https://${host}/v1` },
       async (url, init) => {
@@ -291,6 +293,22 @@ for (const [provider, path, header, value, payload] of [
     );
   });
 }
+
+test("a custom Speko endpoint must reject an invalid key", async () => {
+  const authorizations = [];
+  await assert.rejects(
+    verifyProviderCredentials(
+      { ...credential, provider: "speko", baseUrl: "https://proxy.test" },
+      async (url, init) => {
+        assert.equal(url, "https://proxy.test/v1/models");
+        authorizations.push(init.headers.Authorization);
+        return Response.json({ models: [] });
+      },
+    ),
+    /doesn’t support API key verification/,
+  );
+  assert.equal(authorizations.length, 2);
+});
 
 test("a negative Cohere validity result is rejected despite HTTP 200", async () => {
   await assert.rejects(

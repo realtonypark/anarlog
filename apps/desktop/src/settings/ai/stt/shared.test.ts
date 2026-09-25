@@ -80,6 +80,8 @@ describe("STT model display labels", () => {
       "GPT Live Transcribe",
     );
     expect(displayModelLabel("gpt-transcribe")).toBe("GPT Transcribe");
+    expect(displayModelLabel("auto-balanced")).toBe("Auto · Balanced");
+    expect(displayModelLabel("auto-cost")).toBe("Auto · Cost");
     expect(displayModelLabel("cohere-transcribe-03-2026")).toBe(
       "Cohere Transcribe",
     );

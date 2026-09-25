@@ -58,6 +58,11 @@ struct SpekoRoute {
 }
 
 #[derive(Debug, Deserialize)]
+struct SpekoUsage {
+    duration_ms: u64,
+}
+
+#[derive(Debug, Deserialize)]
 struct SpekoBatchResponse {
     #[serde(default)]
     text: String,
@@ -65,6 +70,8 @@ struct SpekoBatchResponse {
     segments: Vec<SpekoSegment>,
     #[serde(default)]
     route: Option<SpekoRoute>,
+    #[serde(default)]
+    usage: Option<SpekoUsage>,
 }
 
 const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
@@ -78,17 +85,7 @@ fn objective(model: Option<&str>) -> &'static str {
     }
 }
 
-async fn do_transcribe_file(
-    client: &ClientWithMiddleware,
-    api_base: &str,
-    api_key: &str,
-    params: &ListenParams,
-    file_path: PathBuf,
-) -> Result<BatchResponse, Error> {
-    let wav = tokio::task::spawn_blocking(move || encode_mono_wav(&file_path))
-        .await
-        .map_err(|e| Error::AudioProcessing(e.to_string()))??;
-
+fn endpoint(api_base: &str) -> Result<url::Url, Error> {
     let mut url: url::Url = if api_base.is_empty() {
         DEFAULT_API_BASE
             .parse()
@@ -98,7 +95,26 @@ async fn do_transcribe_file(
             Error::AudioProcessing(format!("invalid api_base: {e}"))
         })?
     };
+    let path = url.path().trim_end_matches('/');
+    if let Some(path) = path.strip_suffix("/v1").map(str::to_owned) {
+        url.set_path(&path);
+    }
     append_path_if_missing(&mut url, "v1/stt/transcriptions");
+    Ok(url)
+}
+
+async fn do_transcribe_file(
+    client: &ClientWithMiddleware,
+    api_base: &str,
+    api_key: &str,
+    params: &ListenParams,
+    file_path: PathBuf,
+) -> Result<BatchResponse, Error> {
+    let url = endpoint(api_base)?;
+    let wav: bytes::Bytes = tokio::task::spawn_blocking(move || encode_mono_wav(&file_path))
+        .await
+        .map_err(|e| Error::AudioProcessing(e.to_string()))??
+        .into();
 
     let mut request = serde_json::json!({
         "routing": { "mode": "auto", "objective": objective(params.model.as_deref()) },
@@ -140,7 +156,7 @@ async fn send(
     url: &url::Url,
     api_key: &str,
     request: &serde_json::Value,
-    wav: &[u8],
+    wav: &bytes::Bytes,
 ) -> Result<BatchResponse, Error> {
     // Speko hashes parts in order for idempotency, so `request` must precede `audio`.
     let form = Form::new()
@@ -148,14 +164,14 @@ async fn send(
             "request",
             Part::text(request.to_string())
                 .mime_str("application/json")
-                .map_err(|e| Error::AudioProcessing(e.to_string()))?,
+                .expect("valid_mime"),
         )
         .part(
             "audio",
-            Part::bytes(wav.to_vec())
+            Part::stream_with_length(wav.clone(), wav.len() as u64)
                 .file_name("audio.wav")
                 .mime_str("audio/wav")
-                .map_err(|e| Error::AudioProcessing(e.to_string()))?,
+                .expect("valid_mime"),
         );
 
     let response = client
@@ -178,9 +194,20 @@ async fn send(
     }
 }
 
-fn convert_response(response: SpekoBatchResponse) -> BatchResponse {
+fn convert_response(mut response: SpekoBatchResponse) -> BatchResponse {
     let mut words = Vec::new();
     let mut speaker_labels: Vec<String> = Vec::new();
+
+    // Segments are optional in Speko's schema; keep a text-only transcript by
+    // spreading it over the metered duration.
+    if response.segments.is_empty() && !response.text.trim().is_empty() {
+        response.segments.push(SpekoSegment {
+            text: response.text.clone(),
+            start_ms: 0,
+            end_ms: response.usage.as_ref().map_or(0, |usage| usage.duration_ms),
+            speaker: None,
+        });
+    }
 
     for segment in &response.segments {
         let speaker = segment
@@ -270,6 +297,163 @@ mod tests {
         assert_eq!(words[2].speaker, Some(1));
         assert_eq!(words[2].channel, MIXED_CAPTURE_CHANNEL);
         assert_eq!(response.metadata["route_provider"], "modulate");
+    }
+
+    #[test]
+    fn maps_models_to_routing_objectives() {
+        for (model, expected) in [
+            (Some("auto-balanced"), "balanced"),
+            (Some("auto-quality"), "quality"),
+            (Some("auto-latency"), "latency"),
+            (Some("auto-cost"), "cost"),
+            (Some("nova-3"), "balanced"),
+            (None, "balanced"),
+        ] {
+            assert_eq!(objective(model), expected, "{model:?}");
+        }
+    }
+
+    #[test]
+    fn builds_transcription_endpoint() {
+        for (api_base, expected) in [
+            ("", "https://router.speko.dev/v1/stt/transcriptions"),
+            (
+                "https://router.speko.dev/",
+                "https://router.speko.dev/v1/stt/transcriptions",
+            ),
+            (
+                "https://router.speko.dev/v1",
+                "https://router.speko.dev/v1/stt/transcriptions",
+            ),
+            (
+                "https://router.speko.dev/v1/",
+                "https://router.speko.dev/v1/stt/transcriptions",
+            ),
+            (
+                "https://eu.router.speko.dev/v1/stt/transcriptions",
+                "https://eu.router.speko.dev/v1/stt/transcriptions",
+            ),
+        ] {
+            assert_eq!(endpoint(api_base).unwrap().as_str(), expected);
+        }
+        assert!(matches!(
+            endpoint("not a url"),
+            Err(Error::AudioProcessing(message)) if message.starts_with("invalid api_base")
+        ));
+    }
+
+    #[test]
+    fn accepts_every_language() {
+        assert_eq!(SpekoAdapter.provider_name(), "speko");
+        assert!(SpekoAdapter.is_supported_languages(
+            &[
+                anlg_language::ISO639::Ko.into(),
+                anlg_language::ISO639::En.into()
+            ],
+            Some("auto-balanced"),
+        ));
+    }
+
+    #[test]
+    fn keeps_punctuation_only_tokens_and_unlabeled_segments() {
+        let response: SpekoBatchResponse = serde_json::from_value(serde_json::json!({
+            "text": " Well ... ok ",
+            "segments": [{ "text": "Well ... ok", "start_ms": 0, "end_ms": 3000, "speaker": "" }]
+        }))
+        .unwrap();
+
+        let response = convert_response(response);
+
+        let alternative = &response.results.channels[0].alternatives[0];
+        assert_eq!(alternative.transcript, "Well ... ok");
+        assert_eq!(alternative.words[1].word, "...");
+        assert!(alternative.words.iter().all(|word| word.speaker.is_none()));
+        assert!(alternative.words.iter().all(|word| word.channel == 0));
+        assert!(response.metadata["route_provider"].is_null());
+    }
+
+    #[test]
+    fn keeps_text_only_transcripts() {
+        let response: SpekoBatchResponse = serde_json::from_value(serde_json::json!({
+            "text": "Hello there.",
+            "usage": { "duration_ms": 2000 }
+        }))
+        .unwrap();
+
+        let words = convert_response(response).results.channels[0].alternatives[0]
+            .words
+            .clone();
+
+        assert_eq!(words.len(), 2);
+        assert_eq!((words[0].start, words[1].end), (0.0, 2.0));
+    }
+
+    #[tokio::test]
+    async fn surfaces_request_and_response_failures() {
+        let transcribe = |api_base: String, path: &'static str| async move {
+            SpekoAdapter
+                .transcribe_file(
+                    &create_client(),
+                    &api_base,
+                    "test-key",
+                    &ListenParams::default(),
+                    path,
+                )
+                .await
+                .unwrap_err()
+        };
+        let audio = anlg_data::english_1::AUDIO_PATH;
+
+        assert!(matches!(
+            transcribe("not a url".to_string(), audio).await,
+            Error::AudioProcessing(_)
+        ));
+        assert!(matches!(
+            transcribe("http://127.0.0.1:1".to_string(), "/nonexistent.wav").await,
+            Error::AudioProcessing(_)
+        ));
+        assert!(!matches!(
+            transcribe("http://127.0.0.1:1".to_string(), audio).await,
+            Error::UnexpectedStatus { .. } | Error::AudioProcessing(_)
+        ));
+
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_string("not json"))
+            .mount(&server)
+            .await;
+        assert!(!matches!(
+            transcribe(server.uri(), audio).await,
+            Error::UnexpectedStatus { .. } | Error::AudioProcessing(_)
+        ));
+    }
+
+    #[tokio::test]
+    async fn does_not_retry_non_retryable_errors() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({
+                "error": { "code": "authentication_failed", "retryable": false }
+            })))
+            .mount(&server)
+            .await;
+
+        let error = SpekoAdapter
+            .transcribe_file(
+                &create_client(),
+                &server.uri(),
+                "bad-key",
+                &ListenParams::default(),
+                anlg_data::english_1::AUDIO_PATH,
+            )
+            .await
+            .unwrap_err();
+
+        assert!(matches!(
+            error,
+            Error::UnexpectedStatus { status, .. } if status == StatusCode::UNAUTHORIZED
+        ));
+        assert_eq!(server.received_requests().await.unwrap().len(), 1);
     }
 
     #[tokio::test]
