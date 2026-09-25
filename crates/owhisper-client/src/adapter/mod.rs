@@ -33,6 +33,7 @@ mod siliconflow;
 pub(crate) mod smallestai;
 pub(crate) mod soniox;
 mod speechmatics;
+mod speko;
 mod together;
 mod whispercpp;
 mod wisprflow;
@@ -67,6 +68,7 @@ pub use siliconflow::*;
 pub use smallestai::*;
 pub use soniox::*;
 pub use speechmatics::*;
+pub use speko::*;
 pub use together::*;
 pub use whispercpp::*;
 pub use wisprflow::*;
@@ -499,6 +501,8 @@ pub enum AdapterKind {
     OpenAI,
     #[strum(serialize = "openrouter")]
     OpenRouter,
+    #[strum(serialize = "speko")]
+    Speko,
     #[strum(serialize = "siliconflow")]
     SiliconFlow,
     #[strum(serialize = "zai")]
@@ -566,6 +570,12 @@ impl AdapterKind {
             host == "openrouter.ai" || host.ends_with(".openrouter.ai")
         }) {
             return Self::OpenRouter;
+        }
+
+        if host_matches(base_url, |host| {
+            host == "speko.dev" || host.ends_with(".speko.dev")
+        }) {
+            return Self::Speko;
         }
 
         if host_matches(base_url, |host| {
@@ -643,6 +653,7 @@ impl AdapterKind {
             | Self::GoogleCloud
             | Self::Groq
             | Self::OpenRouter
+            | Self::Speko
             | Self::SiliconFlow
             | Self::Zai
             | Self::RevAi
@@ -685,7 +696,7 @@ impl AdapterKind {
             Self::AssemblyAI => AssemblyAIAdapter::language_support_live(languages),
             Self::Gladia => GladiaAdapter::language_support_live(languages, model),
             Self::OpenAI => OpenAIAdapter::language_support_live(languages),
-            Self::OpenRouter => LanguageSupport::NotSupported,
+            Self::OpenRouter | Self::Speko => LanguageSupport::NotSupported,
             Self::SiliconFlow | Self::Zai => LanguageSupport::NotSupported,
             Self::Fireworks => FireworksAdapter::language_support_live(languages),
             Self::ElevenLabs => ElevenLabsAdapter::language_support_live(languages),
@@ -728,6 +739,7 @@ impl AdapterKind {
             Self::Gladia => GladiaAdapter::language_support_batch(languages, model),
             Self::OpenAI => OpenAIAdapter::language_support_batch(languages),
             Self::OpenRouter => OpenRouterAdapter::language_support_batch(languages),
+            Self::Speko => SpekoAdapter::language_support_batch(languages),
             Self::SiliconFlow => SiliconFlowAdapter::language_support_batch(languages),
             Self::Zai => ZaiAdapter::language_support_batch(languages),
             Self::Fireworks => FireworksAdapter::language_support_batch(languages),

@@ -7,8 +7,8 @@ use owhisper_client::{
     CohereAdapter, DeepgramAdapter, ElevenLabsAdapter, FireworksAdapter, GladiaAdapter,
     GoogleCloudAdapter, GoogleGenerativeAiAdapter, GroqAdapter, MetaAdapter, MistralAdapter,
     OpenAIAdapter, OpenRouterAdapter, PyannoteAdapter, RevAiAdapter, SiliconFlowAdapter,
-    SmallestAIAdapter, SonioxAdapter, SpeechmaticsAdapter, TogetherAdapter, WisprFlowAdapter,
-    XaiAdapter, ZaiAdapter,
+    SmallestAIAdapter, SonioxAdapter, SpeechmaticsAdapter, SpekoAdapter, TogetherAdapter,
+    WisprFlowAdapter, XaiAdapter, ZaiAdapter,
 };
 use owhisper_interface::batch::{Alternatives, Channel, Response, Results};
 use tracing::Instrument;
@@ -88,6 +88,7 @@ pub(in crate::batch) async fn run_direct_batch_for_adapter_kind(
         Fireworks => FireworksAdapter,
         OpenAI => OpenAIAdapter,
         OpenRouter => OpenRouterAdapter,
+        Speko => SpekoAdapter,
         SiliconFlow => SiliconFlowAdapter,
         Zai => ZaiAdapter,
         Gladia => GladiaAdapter,

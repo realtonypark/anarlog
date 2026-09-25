@@ -186,6 +186,7 @@ export function getSttModelTranscriptionMode(
   if (
     provider === "groq" ||
     provider === "openrouter" ||
+    provider === "speko" ||
     provider === "siliconflow" ||
     provider === "together" ||
     provider === "zai" ||

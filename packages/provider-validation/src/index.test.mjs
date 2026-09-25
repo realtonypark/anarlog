@@ -210,6 +210,13 @@ for (const [provider, path, header, value, payload] of [
     { data: { label: "test key" } },
   ],
   [
+    "speko",
+    "/v1/v1/models",
+    "Authorization",
+    "Bearer synthetic-key",
+    { models: [] },
+  ],
+  [
     "deepgram",
     "/v1/projects",
     "Authorization",

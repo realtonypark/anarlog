@@ -29,8 +29,8 @@ pub use adapter::{
     FireworksAdapter, GladiaAdapter, GoogleCloudAdapter, GoogleGenerativeAiAdapter, GroqAdapter,
     LanguageQuality, LanguageSupport, MetaAdapter, MistralAdapter, NariAdapter, OpenAIAdapter,
     OpenRouterAdapter, PyannoteAdapter, RealtimeSttAdapter, RevAiAdapter, SiliconFlowAdapter,
-    SmallestAIAdapter, SonioxAdapter, SpeechmaticsAdapter, TogetherAdapter, WhisperCppAdapter,
-    WisprFlowAdapter, XaiAdapter, ZaiAdapter, append_provider_param,
+    SmallestAIAdapter, SonioxAdapter, SpeechmaticsAdapter, SpekoAdapter, TogetherAdapter,
+    WhisperCppAdapter, WisprFlowAdapter, XaiAdapter, ZaiAdapter, append_provider_param,
     documented_language_codes_batch, documented_language_codes_live, is_anarlog_proxy,
     is_local_host, normalize_languages,
 };

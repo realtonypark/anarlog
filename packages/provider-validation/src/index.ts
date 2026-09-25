@@ -202,6 +202,9 @@ function credentialRequest({ provider, baseUrl, apiKey }: ProviderCredential) {
       url = `${base}/key`;
       accept = (value) => typeof record(record(value).data).label === "string";
       break;
+    case "speko":
+      url = `${base}/v1/models`;
+      break;
     case "deepgram":
       url = `${base}/projects`;
       headers = { Authorization: `Token ${apiKey}` };

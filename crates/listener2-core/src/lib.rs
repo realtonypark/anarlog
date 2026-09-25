@@ -177,6 +177,7 @@ pub fn suggest_providers_for_languages_batch(languages: &[anlg_language::Languag
         AdapterKind::AssemblyAI,
         AdapterKind::OpenAI,
         AdapterKind::OpenRouter,
+        AdapterKind::Speko,
         AdapterKind::SiliconFlow,
         AdapterKind::Zai,
         AdapterKind::Gladia,

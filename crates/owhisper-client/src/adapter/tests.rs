@@ -213,6 +213,12 @@ fn test_adapter_kind_from_url_and_languages() {
             AdapterKind::OpenRouter,
         ),
         (
+            "https://router.speko.dev",
+            &[En],
+            Some("auto-balanced"),
+            AdapterKind::Speko,
+        ),
+        (
             "https://api.siliconflow.cn/v1",
             &[Zh],
             Some("FunAudioLLM/SenseVoiceSmall"),
@@ -273,6 +279,7 @@ fn test_has_live_mode() {
         AdapterKind::GoogleCloud,
         AdapterKind::Groq,
         AdapterKind::OpenRouter,
+        AdapterKind::Speko,
         AdapterKind::SiliconFlow,
         AdapterKind::Zai,
         AdapterKind::RevAi,

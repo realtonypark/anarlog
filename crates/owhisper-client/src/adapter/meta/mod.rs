@@ -1,5 +1,5 @@
 #[cfg(feature = "local")]
-mod batch;
+pub(crate) mod batch;
 mod language;
 mod live;
 
@@ -68,7 +68,7 @@ impl MetaAdapter {
     }
 
     // Muse Voice has turn-level timing only, so words share the turn evenly.
-    fn word_spans(text: &str, start: f64, end: f64) -> Vec<(&str, f64, f64)> {
+    pub(crate) fn word_spans(text: &str, start: f64, end: f64) -> Vec<(&str, f64, f64)> {
         let tokens: Vec<&str> = text.split_whitespace().collect();
         if tokens.is_empty() {
             return vec![];

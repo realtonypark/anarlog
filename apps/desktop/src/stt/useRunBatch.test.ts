@@ -219,6 +219,7 @@ describe("getBatchProvider", () => {
     ["google_generative_ai", "gemini-3.5-transcribe"],
     ["groq", "whisper-large-v3-turbo"],
     ["openrouter", "openai/gpt-4o-mini-transcribe"],
+    ["speko", "auto-balanced"],
     ["siliconflow", "FunAudioLLM/SenseVoiceSmall"],
     ["zai", "glm-asr-2512"],
     ["revai", "machine"],

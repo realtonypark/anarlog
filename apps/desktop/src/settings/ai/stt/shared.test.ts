@@ -19,6 +19,7 @@ describe("STT providers", () => {
       "assemblyai",
       "openai",
       "openrouter",
+      "speko",
       "dashscope",
       "zai",
       "siliconflow",
@@ -141,6 +142,7 @@ describe("STT model display labels", () => {
     for (const provider of [
       "groq",
       "openrouter",
+      "speko",
       "zai",
       "siliconflow",
       "together",

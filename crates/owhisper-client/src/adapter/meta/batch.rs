@@ -128,7 +128,7 @@ async fn do_transcribe_file(
 }
 
 // Muse accepts only RIFF WAV, mono s16, at 16 or 24 kHz.
-fn encode_mono_wav(path: &Path) -> Result<Vec<u8>, Error> {
+pub(crate) fn encode_mono_wav(path: &Path) -> Result<Vec<u8>, Error> {
     use anlg_audio_utils::Source;
 
     let source = anlg_audio_utils::source_from_path(path)

@@ -72,7 +72,15 @@ const OPENROUTER_MODEL_LABELS: Record<string, string> = {
   "google/chirp-3": "Chirp 3",
 };
 
+const SPEKO_MODEL_LABELS: Record<string, string> = {
+  "auto-balanced": "Auto · Balanced",
+  "auto-quality": "Auto · Quality",
+  "auto-latency": "Auto · Latency",
+  "auto-cost": "Auto · Cost",
+};
+
 const displayModelId = (model: string): string => {
+  if (SPEKO_MODEL_LABELS[model]) return SPEKO_MODEL_LABELS[model];
   if (model === "qwen3-asr-fast:free") return "Qwen3 ASR Fast (Free)";
   if (model === "qwen3-asr:free") return "Qwen3 ASR (Free)";
   if (model === "qwen3-asr-fast") return "Qwen3 ASR Fast (Partner)";
@@ -535,6 +543,26 @@ const _PROVIDERS = [
       setup: {
         label: "API setup",
         url: "https://openrouter.ai/settings/keys",
+      },
+    },
+  },
+  {
+    disabled: false,
+    id: "speko",
+    displayName: "Speko Router",
+    badge: "After recording",
+    icon: <ProviderBrandImage src="/assets/speko-mark.svg" alt="Speko" />,
+    baseUrl: "https://router.speko.dev",
+    models: ["auto-balanced", "auto-quality", "auto-latency", "auto-cost"],
+    requirements: [{ kind: "requires_config", fields: ["api_key"] }],
+    links: {
+      models: {
+        label: "Routing",
+        url: "https://docs.speko.ai/relay/routing",
+      },
+      setup: {
+        label: "API setup",
+        url: "https://docs.speko.ai/relay/api-keys",
       },
     },
   },
@@ -1105,6 +1133,7 @@ const PROVIDER_ORDER = [
   "assemblyai",
   "openai",
   "openrouter",
+  "speko",
   "dashscope",
   "zai",
   "siliconflow",
