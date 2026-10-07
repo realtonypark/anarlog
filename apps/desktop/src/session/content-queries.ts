@@ -18,6 +18,7 @@ type SessionContentSqlRow = {
   event_id: string;
   raw_note_id: string;
   raw_template_id: string;
+  raw_updated_at: string;
   raw_body: string;
   raw_body_format: string;
   enhanced_notes_json: string;
@@ -61,6 +62,7 @@ export type SessionContentSnapshot = {
   eventId: string | null;
   rawNoteId: string | null;
   rawTemplateId: string;
+  rawUpdatedAt: string;
   rawContent: string;
   rawContentFormat: string;
   rawMarkdown: string;
@@ -108,6 +110,7 @@ const SESSION_CONTENT_SQL = `
     COALESCE(NULLIF(session.event_id, ''), NULLIF(session.external_event_id, ''), '') AS event_id,
     COALESCE(note.id, '') AS raw_note_id,
     COALESCE(note.template_id, '') AS raw_template_id,
+    COALESCE(note.updated_at, '') AS raw_updated_at,
     COALESCE(note.body, '') AS raw_body,
     COALESCE(note.body_format, 'prosemirror_json') AS raw_body_format,
     COALESCE((
@@ -283,6 +286,7 @@ function mapSessionContentRow(
     eventId: row.event_id || null,
     rawNoteId: row.raw_note_id || null,
     rawTemplateId: row.raw_template_id,
+    rawUpdatedAt: row.raw_updated_at,
     rawContent: row.raw_body,
     rawContentFormat: row.raw_body_format,
     rawMarkdown: bodyToMarkdown(row.raw_body, row.raw_body_format),

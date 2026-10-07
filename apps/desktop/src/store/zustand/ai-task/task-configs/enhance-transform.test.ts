@@ -54,6 +54,7 @@ function createSnapshot() {
     eventId: null,
     rawNoteId: "session-1",
     rawTemplateId: "",
+    rawUpdatedAt: "",
     rawContent: "![post](asset://localhost/post.png)",
     rawContentFormat: "markdown",
     rawMarkdown: "![post](asset://localhost/post.png)",
@@ -375,6 +376,159 @@ describe("enhanceTransform.transformArgs", () => {
         "enhance render template.sections",
       ),
     ).not.toThrow();
+  });
+
+  it("prefers the live template when it was saved after the memo", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-01T00:00:00.000Z",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          "Custom",
+          "Updates & Discussions",
+          "Done",
+          "In Progress",
+          "To do",
+        ].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "Scrum",
+      description: "Quick syncs",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "TL;DR", description: "One-sentence overview" },
+        { title: "Updates & Discussions", description: "Updates" },
+        { title: "Done", description: "Done" },
+        { title: "In Progress", description: "In progress" },
+        { title: "To do", description: "To do" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "TL;DR",
+      "Updates & Discussions",
+      "Done",
+      "In Progress",
+      "To do",
+      "Custom",
+    ]);
+  });
+
+  it("keeps memo renames when the memo was written after the template", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-06T00:00:00.000Z",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+          { type: "paragraph" },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Next Steps" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Updates\n\n## Next Steps",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections).toEqual([
+      { title: "Updates", description: "Recent changes" },
+      { title: "Next Steps", description: "Follow-ups" },
+    ]);
+  });
+
+  it("follows template reordering when the template was saved after the memo", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-01T00:00:00.000Z",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Action Items" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Action Items\n\n## Updates",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "Updates",
+      "Action Items",
+    ]);
   });
 
   it("keeps the applied template when the memo has no section headings", async () => {

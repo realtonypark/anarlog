@@ -551,6 +551,7 @@ function makeSnapshot({
     eventId: null,
     rawNoteId: null,
     rawTemplateId: "",
+    rawUpdatedAt: "",
     rawContent: "",
     rawContentFormat: "markdown",
     rawMarkdown: "",

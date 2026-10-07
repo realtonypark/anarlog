@@ -72,9 +72,17 @@ async function transformArgs(
   );
   const sessionContext = getSessionContext(snapshot, meetingChatContext);
   const templateRecord = await loadTemplate(templateId);
+  const preferTemplate = isTemplateNewerThanMemo(
+    templateRecord?.updatedAt,
+    snapshot.rawUpdatedAt,
+  );
   const memoTemplateSections =
     templateId === snapshot.rawTemplateId
-      ? getMemoTemplateSections(snapshot, templateRecord?.sections ?? [])
+      ? getMemoTemplateSections(
+          snapshot,
+          templateRecord?.sections ?? [],
+          preferTemplate,
+        )
       : null;
   let template: TaskArgsMapTransformed["enhance"]["template"] = templateRecord
     ? {
@@ -144,9 +152,25 @@ async function transformArgs(
   };
 }
 
+function isTemplateNewerThanMemo(
+  templateUpdatedAt: string | undefined,
+  memoUpdatedAt: string,
+): boolean {
+  if (!templateUpdatedAt || !memoUpdatedAt) {
+    return false;
+  }
+  const templateTime = Date.parse(templateUpdatedAt);
+  const memoTime = Date.parse(memoUpdatedAt);
+  if (Number.isNaN(templateTime) || Number.isNaN(memoTime)) {
+    return false;
+  }
+  return templateTime > memoTime;
+}
+
 function getMemoTemplateSections(
   snapshot: SessionContentSnapshot,
   originalSections: TemplateSection[],
+  preferTemplate = false,
 ): TemplateSection[] {
   const document =
     snapshot.rawContentFormat === "markdown"
@@ -164,10 +188,12 @@ function getMemoTemplateSections(
     return [];
   }
 
-  // A rename keeps each edited heading in its template position, while a
-  // template edit moves or adds sections. Only positionally aligned title
-  // changes count as renames: equal counts alone cannot tell a renamed memo
-  // from a memo predating a template edit.
+  // Titles and positions alone cannot tell a memo rename from a template
+  // edit when both sides changed the same position (e.g. a memo-added
+  // heading where the template later added a section). When the template
+  // was saved after the memo was last written, the divergence most likely
+  // comes from the template edit, so the live template takes authority.
+  // Otherwise a rename keeps each edited heading in its template position.
   const memoTitles = new Set(headings);
   const unmatchedMemo: number[] = [];
   headings.forEach((title, index) => {
@@ -182,6 +208,7 @@ function getMemoTemplateSections(
     }
   });
   const isRename =
+    !preferTemplate &&
     unmatchedMemo.length === unmatchedTemplate.length &&
     unmatchedMemo.every(
       (memoIndex, position) => memoIndex === unmatchedTemplate[position],
