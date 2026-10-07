@@ -1,10 +1,9 @@
 import { useCallback, useRef } from "react";
 
 import { md2json } from "@anlg/editor/markdown";
-import type { JSONContent } from "@anlg/editor/note";
 import type { SessionEvent } from "@anlg/store";
 
-import { extractSectionHeadings } from "../title-content";
+import { extractBodyHeadingsKey } from "../title-content";
 import type {
   SessionChanges,
   SessionRecord,
@@ -257,16 +256,6 @@ function parseJsonRecord(value: unknown): Record<string, unknown> {
   }
 }
 
-function extractHeadingsKey(body: string, format?: string): string | null {
-  try {
-    const document =
-      format === "markdown" ? md2json(body) : (JSON.parse(body) as JSONContent);
-    return extractSectionHeadings(document).join("\n");
-  } catch {
-    return null;
-  }
-}
-
 // A memo without a stored key predates heading tracking. Compare against the
 // stored body: unchanged headings keep the note's previous write time so a
 // newer template keeps authority, while a real heading edit stamps now. An
@@ -279,7 +268,7 @@ function previousHeadingsTime(
   if (row?.body === undefined) {
     return now;
   }
-  const storedKey = extractHeadingsKey(row.body, row.body_format);
+  const storedKey = extractBodyHeadingsKey(row.body, row.body_format);
   if (storedKey === null || storedKey !== headingsKey) {
     return now;
   }
@@ -340,7 +329,7 @@ export function updateSession(
         metadata.appliedTemplate = changes.raw_template_snapshot;
         changed = true;
       }
-      const headingsKey = extractHeadingsKey(changes.raw_md);
+      const headingsKey = extractBodyHeadingsKey(changes.raw_md);
       if (headingsKey !== null) {
         const stored = metadata.headings as
           | { key?: unknown; updatedAt?: unknown }

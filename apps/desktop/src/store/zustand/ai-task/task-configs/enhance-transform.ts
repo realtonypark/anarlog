@@ -179,13 +179,14 @@ function normalizeHeadingTitle(title: string): string {
 // must share its characters in order with the live title (spacing,
 // punctuation, and affix edits only, no word substitutions), within a
 // stricter 25% relative threshold than enhance-validator's 30% acceptance
-// rule. Same-word collisions ("Hiring"/"Firing") and dissimilar renames or
+// rule. Word substitutions ("Hiring"/"Firing") and dissimilar renames or
 // removals are intentionally kept as memo-only sections because without a
-// snapshot they are indistinguishable from genuine user additions. Callers
-// must only pass unmatched live titles: a memo heading can only be residue
-// of a rename the template actually made. This check runs only when the
-// template is authoritative (preferTemplate), never to overrule a
-// memo-side rename.
+// snapshot they are indistinguishable from genuine user additions; same-root
+// affix collisions ("Actions"/"Auctions") can still drop and are an accepted
+// residual. Callers must only pass unmatched live titles: a memo heading can
+// only be residue of a rename the template actually made. This check runs
+// only when the template is authoritative (preferTemplate), never to
+// overrule a memo-side rename.
 function isSubsequence(shorter: string, longer: string): boolean {
   let index = 0;
   for (const char of longer) {

@@ -8,6 +8,7 @@ import {
   parseSessionSourceApps,
   type SessionSourceApp,
 } from "~/session/source-apps";
+import { extractBodyHeadingsKey } from "~/session/title-content";
 import type { SpeakerHintWithId, WordWithId } from "~/stt/types";
 
 type SessionContentSqlRow = {
@@ -294,7 +295,11 @@ function mapSessionContentRow(
     rawNoteId: row.raw_note_id || null,
     rawTemplateId: row.raw_template_id,
     rawUpdatedAt: row.raw_updated_at,
-    rawHeadingsUpdatedAt: parseHeadingsUpdatedAt(row.raw_metadata_json),
+    rawHeadingsUpdatedAt: resolveHeadingsUpdatedAt(
+      row.raw_metadata_json,
+      row.raw_body,
+      row.raw_body_format,
+    ),
     rawAppliedTemplate: parseAppliedTemplateSnapshot(row.raw_metadata_json),
     rawContent: row.raw_body,
     rawContentFormat: row.raw_body_format,
@@ -361,10 +366,24 @@ export function parseAppliedTemplateSnapshot(
 }
 
 const headingsMetadataSchema = z.object({
-  headings: z.object({ updatedAt: z.string() }).nullish(),
+  headings: z.object({ key: z.string(), updatedAt: z.string() }).nullish(),
 });
 
-export function parseHeadingsUpdatedAt(value: string): string {
-  const result = headingsMetadataSchema.safeParse(parseJson(value));
-  return result.success ? (result.data.headings?.updatedAt ?? "") : "";
+// Trusts the stored headings timestamp only when its key matches the current
+// body: writers outside desktop persistence (e.g. mobile) can change headings
+// without restamping. A mismatch or unreadable body falls back to "", letting
+// callers use the document write time instead.
+export function resolveHeadingsUpdatedAt(
+  metadataJson: string,
+  body: string,
+  bodyFormat: string,
+): string {
+  const result = headingsMetadataSchema.safeParse(parseJson(metadataJson));
+  const stored = result.success ? result.data.headings : null;
+  if (!stored) {
+    return "";
+  }
+  return extractBodyHeadingsKey(body, bodyFormat) === stored.key
+    ? stored.updatedAt
+    : "";
 }

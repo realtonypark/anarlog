@@ -1,3 +1,4 @@
+import { md2json } from "@anlg/editor/markdown";
 import type { JSONContent, PlaceholderFunction } from "@anlg/editor/note";
 
 export const documentTitlePlaceholder: PlaceholderFunction = ({ node, pos }) =>
@@ -11,6 +12,19 @@ export function extractSectionHeadings(content: JSONContent): string[] {
     const title = collectText(node).trim();
     return title ? [title] : [];
   });
+}
+
+export function extractBodyHeadingsKey(
+  body: string,
+  format?: string,
+): string | null {
+  try {
+    const document =
+      format === "markdown" ? md2json(body) : (JSON.parse(body) as JSONContent);
+    return extractSectionHeadings(document).join("\n");
+  } catch {
+    return null;
+  }
 }
 
 export function extractFirstLineTitle(content: JSONContent) {
