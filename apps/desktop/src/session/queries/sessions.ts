@@ -1,8 +1,10 @@
 import { useCallback, useRef } from "react";
 
 import { md2json } from "@anlg/editor/markdown";
+import type { JSONContent } from "@anlg/editor/note";
 import type { SessionEvent } from "@anlg/store";
 
+import { extractSectionHeadings } from "../title-content";
 import type {
   SessionChanges,
   SessionRecord,
@@ -255,6 +257,14 @@ function parseJsonRecord(value: unknown): Record<string, unknown> {
   }
 }
 
+function extractHeadingsKey(body: string): string | null {
+  try {
+    return extractSectionHeadings(JSON.parse(body) as JSONContent).join("\n");
+  } catch {
+    return null;
+  }
+}
+
 export function updateSession(
   sessionId: string,
   changes: SessionChanges,
@@ -292,14 +302,13 @@ export function updateSession(
     }
 
     let noteMetadata: string | undefined;
-    if (
-      (changes.raw_template_snapshot !== undefined ||
-        changes.raw_headings_key !== undefined) &&
-      changes.raw_md !== undefined
-    ) {
+    if (changes.raw_md !== undefined) {
       const existing =
-        (await liveQueryClient.execute<{ generation_metadata_json: string }>(
-          `SELECT generation_metadata_json FROM session_documents WHERE id = ? AND kind = 'note'`,
+        (await liveQueryClient.execute<{
+          generation_metadata_json: string;
+          updated_at: string;
+        }>(
+          `SELECT generation_metadata_json, updated_at FROM session_documents WHERE id = ? AND kind = 'note'`,
           [sessionId],
         )) ?? [];
       const metadata = parseJsonRecord(existing[0]?.generation_metadata_json);
@@ -308,12 +317,21 @@ export function updateSession(
         metadata.appliedTemplate = changes.raw_template_snapshot;
         changed = true;
       }
-      if (changes.raw_headings_key !== undefined) {
-        const stored = metadata.headings as { key?: unknown } | undefined;
-        if (stored?.key !== changes.raw_headings_key) {
+      const headingsKey = extractHeadingsKey(changes.raw_md);
+      if (headingsKey !== null) {
+        const stored = metadata.headings as
+          | { key?: unknown; updatedAt?: unknown }
+          | undefined;
+        if (stored?.key !== headingsKey) {
+          // A memo without a stored key predates heading tracking: stamp the
+          // note's previous write time, treating this save as heading-neutral
+          // until proven otherwise, so a newer template keeps authority.
           metadata.headings = {
-            key: changes.raw_headings_key,
-            updatedAt: now,
+            key: headingsKey,
+            updatedAt:
+              stored?.key === undefined
+                ? (existing[0]?.updated_at ?? now)
+                : now,
           };
           changed = true;
         }

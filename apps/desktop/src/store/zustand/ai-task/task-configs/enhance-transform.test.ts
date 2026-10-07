@@ -1113,6 +1113,36 @@ describe("enhanceTransform.transformArgs", () => {
     ]);
   });
 
+  it("keeps custom headings resembling matched template titles", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-01T00:00:00.000Z",
+      rawContent: docWithHeadings("Development", "Deployment"),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "Release",
+      description: "Ship checklist",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [{ title: "Development", description: "Dev updates" }],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "Development",
+      "Deployment",
+    ]);
+  });
+
   it("drops a Korean memo heading renamed in the newer template", async () => {
     mocks.loadSessionContentSnapshot.mockResolvedValue({
       ...createSnapshot(),

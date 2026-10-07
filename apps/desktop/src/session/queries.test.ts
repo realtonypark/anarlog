@@ -182,6 +182,14 @@ describe("session SQLite operations", () => {
 
   it("commits title and raw note changes in one ordered transaction", async () => {
     mocks.executeTransaction.mockResolvedValueOnce([1, 1]);
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({
+          headings: { key: "", updatedAt: "2026-10-01T00:00:00.000Z" },
+        }),
+        updated_at: "2026-10-01T00:00:00.000Z",
+      },
+    ]);
 
     await updateSession("session-1", {
       title: "Updated title",
@@ -267,10 +275,11 @@ describe("session SQLite operations", () => {
         sections: ["Updates"],
       },
       otherKey: "kept",
+      headings: { key: "", updatedAt: expect.any(String) },
     });
   });
 
-  it("stamps changed memo headings without touching the template snapshot", async () => {
+  it("stamps untracked memo headings with the previous write time", async () => {
     mocks.execute.mockResolvedValueOnce([
       {
         generation_metadata_json: JSON.stringify({
@@ -278,14 +287,22 @@ describe("session SQLite operations", () => {
             templateId: "template-1",
             sections: ["Updates"],
           },
-          headings: { key: "Updates", updatedAt: "2026-10-01T00:00:00.000Z" },
         }),
+        updated_at: "2026-10-01T00:00:00.000Z",
       },
     ]);
 
     await updateSession("session-1", {
-      raw_md: '{"type":"doc"}',
-      raw_headings_key: "Updates\nNext Steps",
+      raw_md: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+        ],
+      }),
     });
 
     const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
@@ -302,8 +319,92 @@ describe("session SQLite operations", () => {
       templateId: "template-1",
       sections: ["Updates"],
     });
+    expect(metadata.headings).toEqual({
+      key: "Updates",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    });
+  });
+
+  it("restamps memo headings only when they change", async () => {
+    const body = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Updates" }],
+        },
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Next Steps" }],
+        },
+      ],
+    });
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({
+          headings: { key: "Updates", updatedAt: "2026-10-01T00:00:00.000Z" },
+        }),
+        updated_at: "2026-10-01T00:00:00.000Z",
+      },
+    ]);
+
+    await updateSession("session-1", { raw_md: body });
+
+    const restamp = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(restamp).toHaveLength(2);
+    const metadata = JSON.parse(restamp[1].params[0] as string) as {
+      headings: { key: string; updatedAt: string };
+    };
     expect(metadata.headings.key).toBe("Updates\nNext Steps");
-    expect(Number.isNaN(Date.parse(metadata.headings.updatedAt))).toBe(false);
+    expect(
+      Date.parse(metadata.headings.updatedAt) >=
+        Date.parse("2026-10-01T00:00:00.000Z"),
+    ).toBe(true);
+
+    mocks.executeTransaction.mockClear();
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({
+          headings: {
+            key: "Updates\nNext Steps",
+            updatedAt: metadata.headings.updatedAt,
+          },
+        }),
+        updated_at: metadata.headings.updatedAt,
+      },
+    ]);
+
+    await updateSession("session-1", { raw_md: body });
+
+    const unchanged = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(unchanged).toHaveLength(1);
+    expect(unchanged[0].sql).toContain("INSERT INTO session_documents");
+  });
+
+  it("skips heading tracking for unparseable memo bodies", async () => {
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({ otherKey: "kept" }),
+        updated_at: "2026-10-01T00:00:00.000Z",
+      },
+    ]);
+
+    await updateSession("session-1", { raw_md: "not json" });
+
+    const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(statements).toHaveLength(1);
+    expect(statements[0].sql).toContain("INSERT INTO session_documents");
   });
 
   it("commits enhanced note content and the derived session title together", async () => {

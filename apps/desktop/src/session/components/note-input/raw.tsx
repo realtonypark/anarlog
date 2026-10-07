@@ -33,10 +33,7 @@ import { useAttachmentResolver } from "~/session/hooks/useAttachmentResolver";
 import { useCreatePreMeetingBrief } from "~/session/hooks/useCreatePreMeetingBrief";
 import { useUpdateSession } from "~/session/queries";
 import type { AppliedTemplateSnapshot } from "~/session/queries/types";
-import {
-  extractSectionHeadings,
-  removeDocumentTitle,
-} from "~/session/title-content";
+import { removeDocumentTitle } from "~/session/title-content";
 import { useListener } from "~/stt/contexts";
 import {
   TemplateIconGlyph,
@@ -151,7 +148,6 @@ export const RawEditor = forwardRef<
       [ref],
     );
 
-    const lastHeadingsKeyRef = useRef<string | null>(null);
     const persistChange = useCallback(
       (
         input: JSONContent,
@@ -159,16 +155,12 @@ export const RawEditor = forwardRef<
         templateSnapshot?: AppliedTemplateSnapshot,
       ) => {
         const portableInput = normalizePortableAttachmentUrls(input);
-        const headingsKey = extractSectionHeadings(portableInput).join("\n");
-        const headingsChanged = lastHeadingsKeyRef.current !== headingsKey;
-        lastHeadingsKeyRef.current = headingsKey;
         return updateSession({
           raw_md: JSON.stringify(portableInput),
           ...(templateId ? { raw_template_id: templateId } : {}),
           ...(templateSnapshot
             ? { raw_template_snapshot: templateSnapshot }
             : {}),
-          ...(headingsChanged ? { raw_headings_key: headingsKey } : {}),
         });
       },
       [updateSession],
@@ -183,7 +175,6 @@ export const RawEditor = forwardRef<
     if (trackedSessionIdRef.current !== sessionId) {
       trackedSessionIdRef.current = sessionId;
       hasTrackedWriteRef.current = false;
-      lastHeadingsKeyRef.current = null;
     }
 
     const hasNonEmptyText = useCallback(

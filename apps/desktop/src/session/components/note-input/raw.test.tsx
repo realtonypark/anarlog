@@ -305,47 +305,8 @@ describe("RawEditor", () => {
     await waitFor(() =>
       expect(hoisted.persistChange).toHaveBeenCalledWith({
         raw_md: JSON.stringify(content),
-        raw_headings_key: "",
       }),
     );
-  });
-
-  it("omits the headings key when only paragraph text changes", async () => {
-    render(<RawEditor sessionId="session-1" />);
-
-    const props = hoisted.noteEditorProps[hoisted.noteEditorProps.length - 1];
-    const heading = {
-      type: "heading",
-      attrs: { level: 2 },
-      content: [{ type: "text", text: "Updates" }],
-    };
-    const first = {
-      type: "doc",
-      content: [
-        heading,
-        { type: "paragraph", content: [{ type: "text", text: "v1" }] },
-      ],
-    };
-    const second = {
-      type: "doc",
-      content: [
-        heading,
-        { type: "paragraph", content: [{ type: "text", text: "v2" }] },
-      ],
-    };
-    (props?.handleChange as (content: unknown) => void)(first);
-
-    await waitFor(() => expect(hoisted.persistChange).toHaveBeenCalledTimes(1));
-    (props?.handleChange as (content: unknown) => void)(second);
-
-    await waitFor(() => expect(hoisted.persistChange).toHaveBeenCalledTimes(2));
-    expect(hoisted.persistChange).toHaveBeenNthCalledWith(1, {
-      raw_md: JSON.stringify(first),
-      raw_headings_key: "Updates",
-    });
-    expect(hoisted.persistChange).toHaveBeenNthCalledWith(2, {
-      raw_md: JSON.stringify(second),
-    });
   });
 
   it("applies favorite template sections to an empty memo", async () => {
@@ -422,7 +383,6 @@ describe("RawEditor", () => {
           templateId: "template-standup",
           sections: ["Yesterday", "Today"],
         },
-        raw_headings_key: "Yesterday\nToday",
       }),
     );
   });

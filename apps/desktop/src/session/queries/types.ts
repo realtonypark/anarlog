@@ -28,7 +28,6 @@ export type SessionChanges = Partial<
   >
 > & {
   raw_template_snapshot?: AppliedTemplateSnapshot;
-  raw_headings_key?: string;
 };
 
 export type SessionSummaryRecord = {

@@ -175,13 +175,15 @@ function normalizeHeadingTitle(title: string): string {
   return title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
-// Similarity is a hint, not proof, of a rename. Limits: short headings need
-// near-exact matches (a 30% relative threshold, as in enhance-validator), so
-// "Tasks"/"Risks" stay separate; dissimilar renames and template removals are
-// intentionally kept as memo-only sections because without a snapshot they
-// are indistinguishable from genuine user additions. This check runs only
-// when the template is authoritative (preferTemplate), never to overrule a
-// memo-side rename.
+// Similarity is a hint, not proof, of a rename. Limits: deletion uses a
+// stricter 25% relative threshold than enhance-validator's 30% acceptance
+// rule, so "Tasks"/"Risks" and "Development"/"Deployment" stay separate;
+// dissimilar renames and template removals are intentionally kept as
+// memo-only sections because without a snapshot they are indistinguishable
+// from genuine user additions. Callers must only pass unmatched live titles:
+// a memo heading can only be residue of a rename the template actually made.
+// This check runs only when the template is authoritative (preferTemplate),
+// never to overrule a memo-side rename.
 function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
   const normalized = normalizeHeadingTitle(title);
   if (!normalized) {
@@ -193,7 +195,7 @@ function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
       return false;
     }
     const threshold = Math.floor(
-      Math.min(normalized.length, candidate.length) * 0.3,
+      Math.min(normalized.length, candidate.length) * 0.25,
     );
     return levenshtein(normalized, candidate) <= threshold;
   });
@@ -439,14 +441,17 @@ function getMemoTemplateSections(
   // written, or the memo added custom headings. Use the live template as the
   // base so added sections survive regeneration, and keep memo-only headings
   // so user additions are not lost. When the template is authoritative,
-  // memo-only headings that look like renames of live titles are stale
-  // residue and drop instead of duplicating the renamed section.
+  // memo-only headings that look like renames of unmatched live titles are
+  // stale residue and drop instead of duplicating the renamed section.
   // Descriptions stay strings: the render validator rejects null.
-  const templateTitles = [...originalByTitle.keys()];
+  const unmatchedTemplateTitles = unmatchedTemplate.map(
+    (index) => originalSections[index]?.title.trim() ?? "",
+  );
   const memoOnly = headings
     .filter((title) => !originalByTitle.has(title))
     .filter(
-      (title) => !preferTemplate || !looksLikeRenameOf(title, templateTitles),
+      (title) =>
+        !preferTemplate || !looksLikeRenameOf(title, unmatchedTemplateTitles),
     )
     .map((title) => ({ title, description: "" }));
   return [
