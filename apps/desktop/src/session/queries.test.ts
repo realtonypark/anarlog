@@ -250,7 +250,7 @@ describe("session SQLite operations", () => {
       raw_template_id: "template-1",
       raw_template_snapshot: {
         templateId: "template-1",
-        sections: [{ title: "Updates", description: "Recent changes" }],
+        sections: ["Updates"],
       },
     });
 
@@ -264,7 +264,7 @@ describe("session SQLite operations", () => {
     expect(JSON.parse(statements[1].params[0] as string)).toEqual({
       appliedTemplate: {
         templateId: "template-1",
-        sections: [{ title: "Updates", description: "Recent changes" }],
+        sections: ["Updates"],
       },
       otherKey: "kept",
     });

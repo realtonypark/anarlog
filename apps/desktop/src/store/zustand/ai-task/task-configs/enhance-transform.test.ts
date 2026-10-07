@@ -539,12 +539,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates & Discussions", description: "Updates" },
-          { title: "Done", description: "Done" },
-          { title: "In Progress", description: "In progress" },
-          { title: "To do", description: "To do" },
-        ],
+        sections: ["Updates & Discussions", "Done", "In Progress", "To do"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -604,10 +599,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-04T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -659,10 +651,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -710,10 +699,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Alpha", description: "First" },
-          { title: "Beta", description: "Second" },
-        ],
+        sections: ["Alpha", "Beta"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -760,10 +746,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -811,10 +794,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -863,10 +843,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-06T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",
@@ -912,10 +889,7 @@ describe("enhanceTransform.transformArgs", () => {
       rawUpdatedAt: "2026-10-01T00:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [
-          { title: "Updates", description: "Recent changes" },
-          { title: "Action Items", description: "Follow-ups" },
-        ],
+        sections: ["Updates", "Action Items"],
       },
       rawContent: JSON.stringify({
         type: "doc",

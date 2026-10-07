@@ -10,14 +10,9 @@ export type SessionRecord = {
   locked: boolean;
 };
 
-export type AppliedTemplateSection = {
-  title: string;
-  description: string;
-};
-
 export type AppliedTemplateSnapshot = {
   templateId: string;
-  sections: AppliedTemplateSection[];
+  sections: string[];
 };
 
 export type SessionChanges = Partial<

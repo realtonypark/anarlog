@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { json2md } from "@anlg/editor/markdown";
 
 import { liveQueryClient } from "~/db";
@@ -328,49 +330,30 @@ function parseJsonArray<T>(value: string): T[] {
   }
 }
 
+// Snapshots store section titles only; the merge reads descriptions from the
+// live template. Object sections are the pre-release shape and still parse.
+const snapshotSectionTitleSchema = z
+  .union([
+    z.string(),
+    z.object({ title: z.string() }).transform((section) => section.title),
+  ])
+  .transform((title) => title.trim())
+  .refine((title) => title.length > 0);
+
+const appliedTemplateSnapshotSchema = z.object({
+  appliedTemplate: z.object({
+    templateId: z.string(),
+    sections: z
+      .array(snapshotSectionTitleSchema.nullable().catch(null))
+      .transform((titles) =>
+        titles.filter((title): title is string => title !== null),
+      ),
+  }),
+});
+
 export function parseAppliedTemplateSnapshot(
   value: string,
 ): AppliedTemplateSnapshot | null {
-  const parsed = parseJson(value);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return null;
-  }
-  const snapshot = (parsed as { appliedTemplate?: unknown }).appliedTemplate;
-  if (
-    snapshot === null ||
-    typeof snapshot !== "object" ||
-    Array.isArray(snapshot)
-  ) {
-    return null;
-  }
-  const { templateId, sections } = snapshot as {
-    templateId?: unknown;
-    sections?: unknown;
-  };
-  if (typeof templateId !== "string" || !Array.isArray(sections)) {
-    return null;
-  }
-  const normalized = sections.flatMap((section) => {
-    if (
-      section === null ||
-      typeof section !== "object" ||
-      Array.isArray(section)
-    ) {
-      return [];
-    }
-    const { title, description } = section as {
-      title?: unknown;
-      description?: unknown;
-    };
-    if (typeof title !== "string" || !title.trim()) {
-      return [];
-    }
-    return [
-      {
-        title: title.trim(),
-        description: typeof description === "string" ? description : "",
-      },
-    ];
-  });
-  return { templateId, sections: normalized };
+  const result = appliedTemplateSnapshotSchema.safeParse(parseJson(value));
+  return result.success ? result.data.appliedTemplate : null;
 }

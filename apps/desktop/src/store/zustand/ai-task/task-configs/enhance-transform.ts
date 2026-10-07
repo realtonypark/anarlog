@@ -26,10 +26,7 @@ import {
   loadSessionContentSnapshot,
   type SessionContentSnapshot,
 } from "~/session/content-queries";
-import type {
-  AppliedTemplateSection,
-  AppliedTemplateSnapshot,
-} from "~/session/queries/types";
+import type { AppliedTemplateSnapshot } from "~/session/queries/types";
 import { formatSessionSourceAppsContext } from "~/session/source-apps";
 import { modelSupportsImageInput } from "~/settings/ai/shared/model-capabilities";
 import type { SettingValues } from "~/settings/schema";
@@ -176,7 +173,7 @@ function isTemplateNewerThanMemo(
 
 type HeadingGap = {
   memo: Array<{ title: string; index: number }>;
-  base: Array<{ title: string; index: number }>;
+  base: string[];
 };
 
 // Splits memo headings and snapshot titles into gaps between their
@@ -216,9 +213,7 @@ function alignHeadingGaps(memo: string[], base: string[]): HeadingGap[] {
     const memoGap = memo
       .slice(prevMemo + 1, nextMemo)
       .map((title, offset) => ({ title, index: prevMemo + 1 + offset }));
-    const baseGap = base
-      .slice(prevBase + 1, nextBase)
-      .map((title, offset) => ({ title, index: prevBase + 1 + offset }));
+    const baseGap = base.slice(prevBase + 1, nextBase);
     if (memoGap.length > 0 || baseGap.length > 0) {
       gaps.push({ memo: memoGap, base: baseGap });
     }
@@ -234,10 +229,9 @@ function alignHeadingGaps(memo: string[], base: string[]): HeadingGap[] {
 
 function mergeWithAppliedSnapshot(
   headings: string[],
-  snapshotSections: AppliedTemplateSection[],
+  snapshotTitles: string[],
   originalSections: TemplateSection[],
 ): TemplateSection[] {
-  const snapshotTitles = snapshotSections.map((section) => section.title);
   const snapshotSet = new Set(snapshotTitles);
   const templateByTitle = new Map(
     originalSections.map((section) => [section.title.trim(), section]),
@@ -276,9 +270,7 @@ function mergeWithAppliedSnapshot(
         !templateByTitle.has(candidate.title) &&
         !snapshotSet.has(candidate.title),
     );
-    const baseCandidates = gap.base.filter(
-      (candidate) => !memoSet.has(candidate.title),
-    );
+    const baseCandidates = gap.base.filter((title) => !memoSet.has(title));
     if (
       memoCandidates.length !== baseCandidates.length ||
       memoCandidates.length === 0
@@ -286,7 +278,7 @@ function mergeWithAppliedSnapshot(
       continue;
     }
     memoCandidates.forEach((candidate, position) => {
-      const base = baseCandidates[position]?.title;
+      const base = baseCandidates[position];
       if (base === undefined || !templateByTitle.has(base)) {
         return;
       }

@@ -381,10 +381,7 @@ describe("RawEditor", () => {
         raw_template_id: "template-standup",
         raw_template_snapshot: {
           templateId: "template-standup",
-          sections: [
-            { title: "Yesterday", description: "" },
-            { title: "Today", description: "" },
-          ],
+          sections: ["Yesterday", "Today"],
         },
       }),
     );

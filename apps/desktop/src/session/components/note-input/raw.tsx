@@ -277,9 +277,7 @@ export const RawEditor = forwardRef<
         templateId: template.id,
         sections: template.sections.flatMap((section) => {
           const title = section.title.trim();
-          return title
-            ? [{ title, description: section.description ?? "" }]
-            : [];
+          return title ? [title] : [];
         }),
       };
       editor.commands.replaceContent(nextContent);

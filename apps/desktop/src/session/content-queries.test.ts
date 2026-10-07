@@ -32,7 +32,7 @@ describe("session content SQLite snapshots", () => {
         raw_metadata_json: JSON.stringify({
           appliedTemplate: {
             templateId: "template-1",
-            sections: [{ title: "Raw note", description: "" }],
+            sections: ["Raw note"],
           },
         }),
         raw_body: JSON.stringify({
@@ -106,7 +106,7 @@ describe("session content SQLite snapshots", () => {
       rawTemplateId: "template-1",
       rawAppliedTemplate: {
         templateId: "template-1",
-        sections: [{ title: "Raw note", description: "" }],
+        sections: ["Raw note"],
       },
       rawContentFormat: "prosemirror_json",
       enhancedNotes: [
@@ -223,5 +223,27 @@ describe("session content SQLite snapshots", () => {
         }),
       ),
     ).toBeNull();
+  });
+
+  it("normalizes title-only and legacy object snapshot sections", () => {
+    expect(
+      parseAppliedTemplateSnapshot(
+        JSON.stringify({
+          appliedTemplate: {
+            templateId: "template-1",
+            sections: [
+              "  Updates  ",
+              { title: "Action Items", description: "Follow-ups" },
+              "",
+              null,
+              42,
+            ],
+          },
+        }),
+      ),
+    ).toEqual({
+      templateId: "template-1",
+      sections: ["Updates", "Action Items"],
+    });
   });
 });
