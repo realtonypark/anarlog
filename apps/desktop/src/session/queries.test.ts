@@ -232,6 +232,44 @@ describe("session SQLite operations", () => {
     );
   });
 
+  it("stores an applied template snapshot alongside other note metadata", async () => {
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({
+          appliedTemplate: {
+            templateId: "template-old",
+            sections: [{ title: "Old", description: "" }],
+          },
+          otherKey: "kept",
+        }),
+      },
+    ]);
+
+    await updateSession("session-1", {
+      raw_md: '{"type":"doc"}',
+      raw_template_id: "template-1",
+      raw_template_snapshot: {
+        templateId: "template-1",
+        sections: [{ title: "Updates", description: "Recent changes" }],
+      },
+    });
+
+    const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(statements).toHaveLength(2);
+    expect(statements[0].sql).toContain("INSERT INTO session_documents");
+    expect(statements[1].sql).toContain("generation_metadata_json = ?");
+    expect(JSON.parse(statements[1].params[0] as string)).toEqual({
+      appliedTemplate: {
+        templateId: "template-1",
+        sections: [{ title: "Updates", description: "Recent changes" }],
+      },
+      otherKey: "kept",
+    });
+  });
+
   it("commits enhanced note content and the derived session title together", async () => {
     mocks.executeTransaction.mockResolvedValueOnce([1, 1]);
 

@@ -239,6 +239,22 @@ export function useSessionHasTranscript(sessionId: string): boolean {
   return useSessionTranscriptExistence(sessionId) === true;
 }
 
+function parseJsonRecord(value: unknown): Record<string, unknown> {
+  if (typeof value !== "string" || !value) {
+    return {};
+  }
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return parsed !== null &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 export function updateSession(
   sessionId: string,
   changes: SessionChanges,
@@ -275,6 +291,21 @@ export function updateSession(
       });
     }
 
+    let appliedTemplateMetadata: string | undefined;
+    if (
+      changes.raw_template_snapshot !== undefined &&
+      changes.raw_md !== undefined
+    ) {
+      const existing =
+        (await liveQueryClient.execute<{ generation_metadata_json: string }>(
+          `SELECT generation_metadata_json FROM session_documents WHERE id = ? AND kind = 'note'`,
+          [sessionId],
+        )) ?? [];
+      const metadata = parseJsonRecord(existing[0]?.generation_metadata_json);
+      metadata.appliedTemplate = changes.raw_template_snapshot;
+      appliedTemplateMetadata = JSON.stringify(metadata);
+    }
+
     if (changes.raw_md !== undefined) {
       const hasTemplateChange = changes.raw_template_id !== undefined;
       statements.push({
@@ -303,6 +334,13 @@ export function updateSession(
           now,
           sessionId,
         ],
+      });
+    }
+
+    if (appliedTemplateMetadata !== undefined) {
+      statements.push({
+        sql: `UPDATE session_documents SET generation_metadata_json = ? WHERE id = ? AND kind = 'note'`,
+        params: [appliedTemplateMetadata, sessionId],
       });
     }
 

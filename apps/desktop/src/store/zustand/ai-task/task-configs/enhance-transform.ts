@@ -26,6 +26,10 @@ import {
   loadSessionContentSnapshot,
   type SessionContentSnapshot,
 } from "~/session/content-queries";
+import type {
+  AppliedTemplateSection,
+  AppliedTemplateSnapshot,
+} from "~/session/queries/types";
 import { formatSessionSourceAppsContext } from "~/session/source-apps";
 import { modelSupportsImageInput } from "~/settings/ai/shared/model-capabilities";
 import type { SettingValues } from "~/settings/schema";
@@ -76,13 +80,16 @@ async function transformArgs(
     templateRecord?.updatedAt,
     snapshot.rawUpdatedAt,
   );
+  const appliedSnapshot =
+    snapshot.rawAppliedTemplate?.templateId === templateId
+      ? snapshot.rawAppliedTemplate
+      : null;
   const memoTemplateSections =
     templateId === snapshot.rawTemplateId
-      ? getMemoTemplateSections(
-          snapshot,
-          templateRecord?.sections ?? [],
+      ? getMemoTemplateSections(snapshot, templateRecord?.sections ?? [], {
           preferTemplate,
-        )
+          appliedSnapshot,
+        })
       : null;
   let template: TaskArgsMapTransformed["enhance"]["template"] = templateRecord
     ? {
@@ -167,10 +174,98 @@ function isTemplateNewerThanMemo(
   return templateTime > memoTime;
 }
 
+function mergeWithAppliedSnapshot(
+  headings: string[],
+  snapshotSections: AppliedTemplateSection[],
+  originalSections: TemplateSection[],
+): TemplateSection[] {
+  const snapshotTitles = snapshotSections.map((section) => section.title);
+  const snapshotSet = new Set(snapshotTitles);
+  const templateByTitle = new Map(
+    originalSections.map((section) => [section.title.trim(), section]),
+  );
+  const memoSet = new Set(headings);
+
+  if (
+    headings.length === originalSections.length &&
+    headings.every((title) => templateByTitle.has(title)) &&
+    originalSections.every((section) => memoSet.has(section.title.trim()))
+  ) {
+    const memoMatchesSnapshot =
+      headings.length === snapshotTitles.length &&
+      headings.every((title, index) => title === snapshotTitles[index]);
+    if (memoMatchesSnapshot) {
+      return originalSections.map((section) => ({
+        title: section.title,
+        description: section.description ?? "",
+      }));
+    }
+    return headings.map((title) => ({
+      title,
+      description: templateByTitle.get(title)?.description ?? "",
+    }));
+  }
+
+  const renameTarget = new Map<string, number>();
+  headings.forEach((title, index) => {
+    if (templateByTitle.has(title) || snapshotSet.has(title)) {
+      return;
+    }
+    const replaced = snapshotTitles[index];
+    if (
+      replaced !== undefined &&
+      !memoSet.has(replaced) &&
+      templateByTitle.has(replaced)
+    ) {
+      renameTarget.set(replaced, index);
+    }
+  });
+
+  const result: TemplateSection[] = [];
+  const consumedMemo = new Set<number>();
+  for (const section of originalSections) {
+    const title = section.title.trim();
+    if (memoSet.has(title)) {
+      result.push({
+        title: section.title,
+        description: section.description ?? "",
+      });
+      continue;
+    }
+    const renamedIndex = renameTarget.get(title);
+    if (renamedIndex !== undefined) {
+      const renamed = headings[renamedIndex] ?? title;
+      result.push({ title: renamed, description: section.description ?? "" });
+      consumedMemo.add(renamedIndex);
+      continue;
+    }
+    if (snapshotSet.has(title)) {
+      continue;
+    }
+    result.push({
+      title: section.title,
+      description: section.description ?? "",
+    });
+  }
+  headings.forEach((title, index) => {
+    if (templateByTitle.has(title) || consumedMemo.has(index)) {
+      return;
+    }
+    if (snapshotSet.has(title)) {
+      return;
+    }
+    result.push({ title, description: "" });
+  });
+  return result;
+}
+
 function getMemoTemplateSections(
   snapshot: SessionContentSnapshot,
   originalSections: TemplateSection[],
-  preferTemplate = false,
+  options: {
+    preferTemplate?: boolean;
+    appliedSnapshot?: AppliedTemplateSnapshot | null;
+  } = {},
 ): TemplateSection[] {
   const document =
     snapshot.rawContentFormat === "markdown"
@@ -188,12 +283,22 @@ function getMemoTemplateSections(
     return [];
   }
 
-  // Titles and positions alone cannot tell a memo rename from a template
-  // edit when both sides changed the same position (e.g. a memo-added
-  // heading where the template later added a section). When the template
-  // was saved after the memo was last written, the divergence most likely
-  // comes from the template edit, so the live template takes authority.
-  // Otherwise a rename keeps each edited heading in its template position.
+  const { preferTemplate = false, appliedSnapshot = null } = options;
+  if (appliedSnapshot) {
+    return mergeWithAppliedSnapshot(
+      headings,
+      appliedSnapshot.sections,
+      originalSections,
+    );
+  }
+
+  // Without a snapshot, titles and positions alone cannot tell a memo
+  // rename from a template edit when both sides changed the same position
+  // (e.g. a memo-added heading where the template later added a section).
+  // When the template was saved after the memo was last written, the
+  // divergence most likely comes from the template edit, so the live
+  // template takes authority. Otherwise a rename keeps each edited heading
+  // in its template position.
   const memoTitles = new Set(headings);
   const unmatchedMemo: number[] = [];
   headings.forEach((title, index) => {

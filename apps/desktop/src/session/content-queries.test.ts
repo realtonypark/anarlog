@@ -9,6 +9,7 @@ vi.mock("~/db", () => ({
 import {
   loadActiveSessionIds,
   loadSessionContentSnapshot,
+  parseAppliedTemplateSnapshot,
 } from "./content-queries";
 
 describe("session content SQLite snapshots", () => {
@@ -28,6 +29,12 @@ describe("session content SQLite snapshots", () => {
         event_id: "event-1",
         raw_note_id: "session-1",
         raw_template_id: "template-1",
+        raw_metadata_json: JSON.stringify({
+          appliedTemplate: {
+            templateId: "template-1",
+            sections: [{ title: "Raw note", description: "" }],
+          },
+        }),
         raw_body: JSON.stringify({
           type: "doc",
           content: [
@@ -97,6 +104,10 @@ describe("session content SQLite snapshots", () => {
       eventId: "event-1",
       rawNoteId: "session-1",
       rawTemplateId: "template-1",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: [{ title: "Raw note", description: "" }],
+      },
       rawContentFormat: "prosemirror_json",
       enhancedNotes: [
         { id: "summary-1", markdown: "First summary", position: 1 },
@@ -196,5 +207,21 @@ describe("session content SQLite snapshots", () => {
       "session-1",
     ]);
     expect(mocks.execute.mock.calls[0][0]).toContain("deleted_at IS NULL");
+  });
+
+  it("rejects malformed applied template snapshots", () => {
+    expect(parseAppliedTemplateSnapshot("")).toBeNull();
+    expect(parseAppliedTemplateSnapshot("not json")).toBeNull();
+    expect(parseAppliedTemplateSnapshot("{}")).toBeNull();
+    expect(
+      parseAppliedTemplateSnapshot(JSON.stringify({ appliedTemplate: {} })),
+    ).toBeNull();
+    expect(
+      parseAppliedTemplateSnapshot(
+        JSON.stringify({
+          appliedTemplate: { templateId: "template-1", sections: "nope" },
+        }),
+      ),
+    ).toBeNull();
   });
 });

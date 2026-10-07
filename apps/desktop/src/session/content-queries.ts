@@ -1,6 +1,7 @@
 import { json2md } from "@anlg/editor/markdown";
 
 import { liveQueryClient } from "~/db";
+import type { AppliedTemplateSnapshot } from "~/session/queries/types";
 import {
   parseSessionSourceApps,
   type SessionSourceApp,
@@ -19,6 +20,7 @@ type SessionContentSqlRow = {
   raw_note_id: string;
   raw_template_id: string;
   raw_updated_at: string;
+  raw_metadata_json: string;
   raw_body: string;
   raw_body_format: string;
   enhanced_notes_json: string;
@@ -63,6 +65,7 @@ export type SessionContentSnapshot = {
   rawNoteId: string | null;
   rawTemplateId: string;
   rawUpdatedAt: string;
+  rawAppliedTemplate: AppliedTemplateSnapshot | null;
   rawContent: string;
   rawContentFormat: string;
   rawMarkdown: string;
@@ -111,6 +114,7 @@ const SESSION_CONTENT_SQL = `
     COALESCE(note.id, '') AS raw_note_id,
     COALESCE(note.template_id, '') AS raw_template_id,
     COALESCE(note.updated_at, '') AS raw_updated_at,
+    COALESCE(note.generation_metadata_json, '{}') AS raw_metadata_json,
     COALESCE(note.body, '') AS raw_body,
     COALESCE(note.body_format, 'prosemirror_json') AS raw_body_format,
     COALESCE((
@@ -287,6 +291,7 @@ function mapSessionContentRow(
     rawNoteId: row.raw_note_id || null,
     rawTemplateId: row.raw_template_id,
     rawUpdatedAt: row.raw_updated_at,
+    rawAppliedTemplate: parseAppliedTemplateSnapshot(row.raw_metadata_json),
     rawContent: row.raw_body,
     rawContentFormat: row.raw_body_format,
     rawMarkdown: bodyToMarkdown(row.raw_body, row.raw_body_format),
@@ -321,4 +326,51 @@ function parseJsonArray<T>(value: string): T[] {
   } catch {
     return [];
   }
+}
+
+export function parseAppliedTemplateSnapshot(
+  value: string,
+): AppliedTemplateSnapshot | null {
+  const parsed = parseJson(value);
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+  const snapshot = (parsed as { appliedTemplate?: unknown }).appliedTemplate;
+  if (
+    snapshot === null ||
+    typeof snapshot !== "object" ||
+    Array.isArray(snapshot)
+  ) {
+    return null;
+  }
+  const { templateId, sections } = snapshot as {
+    templateId?: unknown;
+    sections?: unknown;
+  };
+  if (typeof templateId !== "string" || !Array.isArray(sections)) {
+    return null;
+  }
+  const normalized = sections.flatMap((section) => {
+    if (
+      section === null ||
+      typeof section !== "object" ||
+      Array.isArray(section)
+    ) {
+      return [];
+    }
+    const { title, description } = section as {
+      title?: unknown;
+      description?: unknown;
+    };
+    if (typeof title !== "string" || !title.trim()) {
+      return [];
+    }
+    return [
+      {
+        title: title.trim(),
+        description: typeof description === "string" ? description : "",
+      },
+    ];
+  });
+  return { templateId, sections: normalized };
 }

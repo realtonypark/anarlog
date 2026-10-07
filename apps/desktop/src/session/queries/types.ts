@@ -10,6 +10,16 @@ export type SessionRecord = {
   locked: boolean;
 };
 
+export type AppliedTemplateSection = {
+  title: string;
+  description: string;
+};
+
+export type AppliedTemplateSnapshot = {
+  templateId: string;
+  sections: AppliedTemplateSection[];
+};
+
 export type SessionChanges = Partial<
   Pick<
     SessionRecord,
@@ -21,7 +31,9 @@ export type SessionChanges = Partial<
     | "raw_template_id"
     | "title"
   >
->;
+> & {
+  raw_template_snapshot?: AppliedTemplateSnapshot;
+};
 
 export type SessionSummaryRecord = {
   id: string;
