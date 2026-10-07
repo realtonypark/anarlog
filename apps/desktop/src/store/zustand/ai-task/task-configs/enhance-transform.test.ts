@@ -934,6 +934,104 @@ describe("enhanceTransform.transformArgs", () => {
     ]);
   });
 
+  it("drops a stale memo heading renamed in the template saved after the memo", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-01T00:00:00.000Z",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          "Previous Sprint & Updates",
+          "Next Sprint Goal",
+          "To-dos",
+        ].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "Sprint",
+      description: "Sprint review",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "TL;DR", description: "One-sentence overview" },
+        { title: "Previous Sprint & Updates", description: "Updates" },
+        { title: "Next Sprint Goal", description: "Goal" },
+        { title: "To do", description: "To do" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "TL;DR",
+      "Previous Sprint & Updates",
+      "Next Sprint Goal",
+      "To do",
+    ]);
+  });
+
+  it("keeps memo headings when the applied template is missing", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: ["Updates", "Action Items"],
+      },
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Action Items" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Updates\n\n## Action Items",
+    });
+    mocks.getTemplateById.mockResolvedValue(null);
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template).toEqual({
+      title: "Meeting memo",
+      description: null,
+      sections: [
+        { title: "Updates", description: "" },
+        { title: "Action Items", description: "" },
+      ],
+    });
+  });
+
   it("keeps the applied template when the memo has no section headings", async () => {
     mocks.loadSessionContentSnapshot.mockResolvedValue({
       ...createSnapshot(),

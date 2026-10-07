@@ -171,6 +171,42 @@ function isTemplateNewerThanMemo(
   return templateTime > memoTime;
 }
 
+function normalizeHeadingTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function headingEditDistance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= b.length; j++) {
+      next[j] = Math.min(
+        prev[j] + 1,
+        next[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = next;
+  }
+  return prev[b.length];
+}
+
+// A memo-only heading that differs from a live template title by a small edit
+// is rename residue from a template edit (e.g. "To-dos" vs "To do"), not a
+// user addition, so the live template title wins and the stale heading drops.
+function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
+  const normalized = normalizeHeadingTitle(title);
+  if (!normalized) {
+    return false;
+  }
+  return templateTitles.some((templateTitle) => {
+    const candidate = normalizeHeadingTitle(templateTitle);
+    return (
+      candidate.length > 0 && headingEditDistance(normalized, candidate) <= 2
+    );
+  });
+}
+
 type HeadingGap = {
   memo: Array<{ title: string; index: number }>;
   base: string[];
@@ -347,6 +383,12 @@ function getMemoTemplateSections(
   if (headings.length === 0) {
     return [];
   }
+  if (originalSections.length === 0) {
+    // No live template (deleted, failed to load, or section-less): the memo
+    // headings are the only section signal. Skip the merge so snapshot-backed
+    // headings are not mistaken for template removals.
+    return headings.map((title) => ({ title, description: "" }));
+  }
 
   const { preferTemplate = false, appliedSnapshot = null } = options;
   if (appliedSnapshot) {
@@ -402,10 +444,16 @@ function getMemoTemplateSections(
   // Diverged: the template gained, lost, or moved sections after the memo was
   // written, or the memo added custom headings. Use the live template as the
   // base so added sections survive regeneration, and keep memo-only headings
-  // so user additions are not lost. Descriptions stay strings: the render
-  // validator rejects null.
+  // so user additions are not lost. When the template is authoritative,
+  // memo-only headings that look like renames of live titles are stale
+  // residue and drop instead of duplicating the renamed section.
+  // Descriptions stay strings: the render validator rejects null.
+  const templateTitles = [...originalByTitle.keys()];
   const memoOnly = headings
     .filter((title) => !originalByTitle.has(title))
+    .filter(
+      (title) => !preferTemplate || !looksLikeRenameOf(title, templateTitles),
+    )
     .map((title) => ({ title, description: "" }));
   return [
     ...originalSections.map((section) => ({
