@@ -160,7 +160,34 @@ function getMemoTemplateSections(
     const title = getNodeText(node).trim();
     return title ? [title] : [];
   });
-  if (headings.length === 0 || headings.length === originalSections.length) {
+  if (headings.length === 0) {
+    return [];
+  }
+
+  // A rename keeps each edited heading in its template position, while a
+  // template edit moves or adds sections. Only positionally aligned title
+  // changes count as renames: equal counts alone cannot tell a renamed memo
+  // from a memo predating a template edit.
+  const memoTitles = new Set(headings);
+  const unmatchedMemo: number[] = [];
+  headings.forEach((title, index) => {
+    if (!originalByTitle.has(title)) {
+      unmatchedMemo.push(index);
+    }
+  });
+  const unmatchedTemplate: number[] = [];
+  originalSections.forEach((section, index) => {
+    if (!memoTitles.has(section.title.trim())) {
+      unmatchedTemplate.push(index);
+    }
+  });
+  const isRename =
+    unmatchedMemo.length === unmatchedTemplate.length &&
+    unmatchedMemo.every(
+      (memoIndex, position) => memoIndex === unmatchedTemplate[position],
+    );
+
+  if (isRename) {
     const preservePositionDescriptions =
       headings.length === originalSections.length;
 
@@ -170,22 +197,23 @@ function getMemoTemplateSections(
         originalByTitle.get(title)?.description ??
         (preservePositionDescriptions
           ? originalSections[index]?.description
-          : null) ??
-        null,
+          : undefined) ??
+        "",
     }));
   }
 
-  // Headings and template sections diverged: the template gained or lost
-  // sections after the memo was written, or the memo added custom headings.
-  // Use the live template as the base so added sections survive regeneration,
-  // and keep memo-only headings so user additions are not lost.
+  // Diverged: the template gained, lost, or moved sections after the memo was
+  // written, or the memo added custom headings. Use the live template as the
+  // base so added sections survive regeneration, and keep memo-only headings
+  // so user additions are not lost. Descriptions stay strings: the render
+  // validator rejects null.
   const memoOnly = headings
     .filter((title) => !originalByTitle.has(title))
-    .map((title) => ({ title, description: null }));
+    .map((title) => ({ title, description: "" }));
   return [
     ...originalSections.map((section) => ({
       title: section.title,
-      description: section.description ?? null,
+      description: section.description ?? "",
     })),
     ...memoOnly,
   ];

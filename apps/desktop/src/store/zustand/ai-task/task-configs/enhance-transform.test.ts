@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { enhanceTransform } from "./enhance-transform";
 
+import { assertCanonicalTemplateSections } from "~/templates/codec";
+
 const mocks = vi.hoisted(() => ({
   collectEnhanceImageContext: vi.fn(),
   getTemplateById: vi.fn(),
@@ -261,6 +263,118 @@ describe("enhanceTransform.transformArgs", () => {
       "Updates",
       "Action Items",
     ]);
+  });
+
+  it("keeps added template sections when counts match but positions moved", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Action Items" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Custom" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Updates\n\n## Action Items\n\n## Custom",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      sections: [
+        { title: "TL;DR", description: "One-sentence overview" },
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "TL;DR",
+      "Updates",
+      "Action Items",
+      "Custom",
+    ]);
+  });
+
+  it("produces render-valid sections when memo and template diverge", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Next Steps" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Updates\n\n## Next Steps",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      sections: [
+        { title: "TL;DR", description: "One-sentence overview" },
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "TL;DR",
+      "Updates",
+      "Action Items",
+      "Next Steps",
+    ]);
+    for (const section of result.template?.sections ?? []) {
+      expect(typeof section.description).toBe("string");
+    }
+    expect(() =>
+      assertCanonicalTemplateSections(
+        result.template?.sections,
+        "enhance render template.sections",
+      ),
+    ).not.toThrow();
   });
 
   it("keeps the applied template when the memo has no section headings", async () => {
