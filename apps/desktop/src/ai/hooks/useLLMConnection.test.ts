@@ -126,6 +126,49 @@ it("sends OpenRouter app-attribution headers for the BYOK openrouter provider", 
   unmount();
 });
 
+it("generates through Ramp Router with the Responses API", async () => {
+  mocks.provider = "ramp_router";
+  vi.mocked(tauriFetch).mockImplementation(async (input, init) => {
+    expect(String(input)).toBe("http://127.0.0.1:8000/v1/responses");
+    const body = JSON.parse(String(init?.body));
+    expect(body.model).toBe("mtplx");
+    expect(Array.isArray(body.input)).toBe(true);
+    expect(body).not.toHaveProperty("messages");
+    return Response.json({
+      id: "ramp-response",
+      object: "response",
+      created_at: 0,
+      model: "mtplx",
+      output: [
+        {
+          type: "message",
+          id: "msg_ramp",
+          status: "completed",
+          role: "assistant",
+          content: [
+            {
+              type: "output_text",
+              text: "Hello from Ramp Router",
+              annotations: [],
+            },
+          ],
+        },
+      ],
+      usage: { input_tokens: 1, output_tokens: 2, total_tokens: 3 },
+    });
+  });
+
+  const { result, unmount } = renderHook(() => useLanguageModel());
+  expect(result.current).not.toBeNull();
+  const completion = await generateText({
+    model: result.current!,
+    prompt: "Summarize the meeting",
+    maxRetries: 0,
+  });
+  expect(await completion.text).toBe("Hello from Ramp Router");
+  unmount();
+});
+
 describe("normalizeLLMProviderId", () => {
   it("maps the legacy hosted provider id and preserves current ids", () => {
     expect(normalizeLLMProviderId("hyprnote")).toBe("anarlog");

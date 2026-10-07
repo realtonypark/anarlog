@@ -49,6 +49,19 @@ export function summaryRequest(
     baseUrl = `${apiUrl}/llm`;
     headers["x-char-task"] = "enhance";
   }
+  if (provider.provider === "ramp_router") {
+    // Router has no Chat Completions surface; use Responses instead.
+    return {
+      url: `${baseUrl}/responses`,
+      headers,
+      body: {
+        model: provider.model || "default",
+        instructions: system,
+        input: source,
+        stream: false,
+      },
+    };
+  }
   return {
     url: `${baseUrl}/chat/completions`,
     headers,
