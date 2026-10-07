@@ -160,18 +160,35 @@ function getMemoTemplateSections(
     const title = getNodeText(node).trim();
     return title ? [title] : [];
   });
-  const preservePositionDescriptions =
-    headings.length === originalSections.length;
+  if (headings.length === 0 || headings.length === originalSections.length) {
+    const preservePositionDescriptions =
+      headings.length === originalSections.length;
 
-  return headings.map((title, index) => ({
-    title,
-    description:
-      originalByTitle.get(title)?.description ??
-      (preservePositionDescriptions
-        ? originalSections[index]?.description
-        : null) ??
-      null,
-  }));
+    return headings.map((title, index) => ({
+      title,
+      description:
+        originalByTitle.get(title)?.description ??
+        (preservePositionDescriptions
+          ? originalSections[index]?.description
+          : null) ??
+        null,
+    }));
+  }
+
+  // Headings and template sections diverged: the template gained or lost
+  // sections after the memo was written, or the memo added custom headings.
+  // Use the live template as the base so added sections survive regeneration,
+  // and keep memo-only headings so user additions are not lost.
+  const memoOnly = headings
+    .filter((title) => !originalByTitle.has(title))
+    .map((title) => ({ title, description: null }));
+  return [
+    ...originalSections.map((section) => ({
+      title: section.title,
+      description: section.description ?? null,
+    })),
+    ...memoOnly,
+  ];
 }
 
 function getNodeText(node: JSONContent): string {
