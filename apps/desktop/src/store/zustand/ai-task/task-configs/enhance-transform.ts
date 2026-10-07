@@ -169,8 +169,8 @@ function getMemoTemplateSections(
       originalByTitle.get(title)?.description ??
       (preservePositionDescriptions
         ? originalSections[index]?.description
-        : null) ??
-      null,
+        : undefined) ??
+      "",
   }));
 }
 

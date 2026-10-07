@@ -214,6 +214,62 @@ describe("enhanceTransform.transformArgs", () => {
     });
   });
 
+  it("falls back to empty descriptions when edited memo headings diverge from the template", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Updates" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Renamed Section" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "Extra Section" }],
+          },
+        ],
+      }),
+      rawContentFormat: "prosemirror_json",
+      rawMarkdown: "## Updates\n\n## Renamed Section\n\n## Extra Section",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "Sprint",
+      description: "Sprint review",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template).toEqual({
+      title: "Sprint",
+      description: "Sprint review",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Renamed Section", description: "" },
+        { title: "Extra Section", description: "" },
+      ],
+    });
+  });
+
   it("keeps the applied template when the memo has no section headings", async () => {
     mocks.loadSessionContentSnapshot.mockResolvedValue({
       ...createSnapshot(),
