@@ -280,6 +280,16 @@ describe("session SQLite operations", () => {
   });
 
   it("stamps untracked memo headings with the previous write time", async () => {
+    const body = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Updates" }],
+        },
+      ],
+    });
     mocks.execute.mockResolvedValueOnce([
       {
         generation_metadata_json: JSON.stringify({
@@ -289,21 +299,12 @@ describe("session SQLite operations", () => {
           },
         }),
         updated_at: "2026-10-01T00:00:00.000Z",
+        body,
+        body_format: "prosemirror_json",
       },
     ]);
 
-    await updateSession("session-1", {
-      raw_md: JSON.stringify({
-        type: "doc",
-        content: [
-          {
-            type: "heading",
-            attrs: { level: 2 },
-            content: [{ type: "text", text: "Updates" }],
-          },
-        ],
-      }),
-    });
+    await updateSession("session-1", { raw_md: body });
 
     const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
       sql: string;
@@ -319,6 +320,89 @@ describe("session SQLite operations", () => {
       templateId: "template-1",
       sections: ["Updates"],
     });
+    expect(metadata.headings).toEqual({
+      key: "Updates",
+      updatedAt: "2026-10-01T00:00:00.000Z",
+    });
+  });
+
+  it("stamps a real heading edit on a legacy memo with the current time", async () => {
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({ otherKey: "kept" }),
+        updated_at: "2026-10-01T00:00:00.000Z",
+        body: JSON.stringify({
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "To-dos" }],
+            },
+          ],
+        }),
+        body_format: "prosemirror_json",
+      },
+    ]);
+
+    await updateSession("session-1", {
+      raw_md: JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: "To do" }],
+          },
+        ],
+      }),
+    });
+
+    const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(statements).toHaveLength(2);
+    const metadata = JSON.parse(statements[1].params[0] as string) as {
+      headings: { key: string; updatedAt: string };
+    };
+    expect(metadata.headings.key).toBe("To do");
+    expect(
+      Date.parse(metadata.headings.updatedAt) >
+        Date.parse("2026-10-01T00:00:00.000Z"),
+    ).toBe(true);
+  });
+
+  it("compares legacy markdown bodies when stamping headings", async () => {
+    const body = JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Updates" }],
+        },
+      ],
+    });
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({ otherKey: "kept" }),
+        updated_at: "2026-10-01T00:00:00.000Z",
+        body: "## Updates\n",
+        body_format: "markdown",
+      },
+    ]);
+
+    await updateSession("session-1", { raw_md: body });
+
+    const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(statements).toHaveLength(2);
+    const metadata = JSON.parse(statements[1].params[0] as string) as {
+      headings: { key: string; updatedAt: string };
+    };
     expect(metadata.headings).toEqual({
       key: "Updates",
       updatedAt: "2026-10-01T00:00:00.000Z",

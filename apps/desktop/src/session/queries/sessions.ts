@@ -257,12 +257,33 @@ function parseJsonRecord(value: unknown): Record<string, unknown> {
   }
 }
 
-function extractHeadingsKey(body: string): string | null {
+function extractHeadingsKey(body: string, format?: string): string | null {
   try {
-    return extractSectionHeadings(JSON.parse(body) as JSONContent).join("\n");
+    const document =
+      format === "markdown" ? md2json(body) : (JSON.parse(body) as JSONContent);
+    return extractSectionHeadings(document).join("\n");
   } catch {
     return null;
   }
+}
+
+// A memo without a stored key predates heading tracking. Compare against the
+// stored body: unchanged headings keep the note's previous write time so a
+// newer template keeps authority, while a real heading edit stamps now. An
+// unreadable or missing baseline stamps now, favoring the memo.
+function previousHeadingsTime(
+  row: { updated_at?: string; body?: string; body_format?: string } | undefined,
+  headingsKey: string,
+  now: string,
+): string {
+  if (row?.body === undefined) {
+    return now;
+  }
+  const storedKey = extractHeadingsKey(row.body, row.body_format);
+  if (storedKey === null || storedKey !== headingsKey) {
+    return now;
+  }
+  return row.updated_at ?? now;
 }
 
 export function updateSession(
@@ -307,8 +328,10 @@ export function updateSession(
         (await liveQueryClient.execute<{
           generation_metadata_json: string;
           updated_at: string;
+          body: string;
+          body_format: string;
         }>(
-          `SELECT generation_metadata_json, updated_at FROM session_documents WHERE id = ? AND kind = 'note'`,
+          `SELECT generation_metadata_json, updated_at, body, body_format FROM session_documents WHERE id = ? AND kind = 'note'`,
           [sessionId],
         )) ?? [];
       const metadata = parseJsonRecord(existing[0]?.generation_metadata_json);
@@ -323,14 +346,11 @@ export function updateSession(
           | { key?: unknown; updatedAt?: unknown }
           | undefined;
         if (stored?.key !== headingsKey) {
-          // A memo without a stored key predates heading tracking: stamp the
-          // note's previous write time, treating this save as heading-neutral
-          // until proven otherwise, so a newer template keeps authority.
           metadata.headings = {
             key: headingsKey,
             updatedAt:
               stored?.key === undefined
-                ? (existing[0]?.updated_at ?? now)
+                ? previousHeadingsTime(existing[0], headingsKey, now)
                 : now,
           };
           changed = true;

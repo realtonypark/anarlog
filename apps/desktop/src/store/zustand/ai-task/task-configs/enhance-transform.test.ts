@@ -1143,6 +1143,40 @@ describe("enhanceTransform.transformArgs", () => {
     ]);
   });
 
+  it("keeps a custom heading that swaps a word in an added template title", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-01T00:00:00.000Z",
+      rawContent: docWithHeadings("Updates", "Hiring"),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Firing", description: "Offboarding" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "Updates",
+      "Firing",
+      "Hiring",
+    ]);
+  });
+
   it("drops a Korean memo heading renamed in the newer template", async () => {
     mocks.loadSessionContentSnapshot.mockResolvedValue({
       ...createSnapshot(),

@@ -175,15 +175,27 @@ function normalizeHeadingTitle(title: string): string {
   return title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
-// Similarity is a hint, not proof, of a rename. Limits: deletion uses a
+// Similarity is a hint, not proof, of a rename. Limits: a residue candidate
+// must share its characters in order with the live title (spacing,
+// punctuation, and affix edits only, no word substitutions), within a
 // stricter 25% relative threshold than enhance-validator's 30% acceptance
-// rule, so "Tasks"/"Risks" and "Development"/"Deployment" stay separate;
-// dissimilar renames and template removals are intentionally kept as
-// memo-only sections because without a snapshot they are indistinguishable
-// from genuine user additions. Callers must only pass unmatched live titles:
-// a memo heading can only be residue of a rename the template actually made.
-// This check runs only when the template is authoritative (preferTemplate),
-// never to overrule a memo-side rename.
+// rule. Same-word collisions ("Hiring"/"Firing") and dissimilar renames or
+// removals are intentionally kept as memo-only sections because without a
+// snapshot they are indistinguishable from genuine user additions. Callers
+// must only pass unmatched live titles: a memo heading can only be residue
+// of a rename the template actually made. This check runs only when the
+// template is authoritative (preferTemplate), never to overrule a
+// memo-side rename.
+function isSubsequence(shorter: string, longer: string): boolean {
+  let index = 0;
+  for (const char of longer) {
+    if (char === shorter[index]) {
+      index++;
+    }
+  }
+  return index === shorter.length;
+}
+
 function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
   const normalized = normalizeHeadingTitle(title);
   if (!normalized) {
@@ -197,7 +209,14 @@ function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
     const threshold = Math.floor(
       Math.min(normalized.length, candidate.length) * 0.25,
     );
-    return levenshtein(normalized, candidate) <= threshold;
+    const [shorter, longer] =
+      normalized.length <= candidate.length
+        ? [normalized, candidate]
+        : [candidate, normalized];
+    return (
+      levenshtein(normalized, candidate) <= threshold &&
+      isSubsequence(shorter, longer)
+    );
   });
 }
 
