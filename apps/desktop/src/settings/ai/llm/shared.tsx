@@ -281,7 +281,7 @@ const _PROVIDERS = [
     badge: null,
     icon: (
       <ProviderBrandImage
-        src="/assets/ramp-router-mark.png"
+        src="/assets/ramp-router-mark.svg"
         alt="Ramp Router"
         preserveColor
       />
