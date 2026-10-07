@@ -291,9 +291,10 @@ export function updateSession(
       });
     }
 
-    let appliedTemplateMetadata: string | undefined;
+    let noteMetadata: string | undefined;
     if (
-      changes.raw_template_snapshot !== undefined &&
+      (changes.raw_template_snapshot !== undefined ||
+        changes.raw_headings_key !== undefined) &&
       changes.raw_md !== undefined
     ) {
       const existing =
@@ -302,8 +303,24 @@ export function updateSession(
           [sessionId],
         )) ?? [];
       const metadata = parseJsonRecord(existing[0]?.generation_metadata_json);
-      metadata.appliedTemplate = changes.raw_template_snapshot;
-      appliedTemplateMetadata = JSON.stringify(metadata);
+      let changed = false;
+      if (changes.raw_template_snapshot !== undefined) {
+        metadata.appliedTemplate = changes.raw_template_snapshot;
+        changed = true;
+      }
+      if (changes.raw_headings_key !== undefined) {
+        const stored = metadata.headings as { key?: unknown } | undefined;
+        if (stored?.key !== changes.raw_headings_key) {
+          metadata.headings = {
+            key: changes.raw_headings_key,
+            updatedAt: now,
+          };
+          changed = true;
+        }
+      }
+      if (changed) {
+        noteMetadata = JSON.stringify(metadata);
+      }
     }
 
     if (changes.raw_md !== undefined) {
@@ -337,10 +354,10 @@ export function updateSession(
       });
     }
 
-    if (appliedTemplateMetadata !== undefined) {
+    if (noteMetadata !== undefined) {
       statements.push({
         sql: `UPDATE session_documents SET generation_metadata_json = ? WHERE id = ? AND kind = 'note'`,
-        params: [appliedTemplateMetadata, sessionId],
+        params: [noteMetadata, sessionId],
       });
     }
 

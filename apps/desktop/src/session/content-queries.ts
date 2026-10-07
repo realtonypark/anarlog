@@ -67,6 +67,7 @@ export type SessionContentSnapshot = {
   rawNoteId: string | null;
   rawTemplateId: string;
   rawUpdatedAt: string;
+  rawHeadingsUpdatedAt: string;
   rawAppliedTemplate: AppliedTemplateSnapshot | null;
   rawContent: string;
   rawContentFormat: string;
@@ -293,6 +294,7 @@ function mapSessionContentRow(
     rawNoteId: row.raw_note_id || null,
     rawTemplateId: row.raw_template_id,
     rawUpdatedAt: row.raw_updated_at,
+    rawHeadingsUpdatedAt: parseHeadingsUpdatedAt(row.raw_metadata_json),
     rawAppliedTemplate: parseAppliedTemplateSnapshot(row.raw_metadata_json),
     rawContent: row.raw_body,
     rawContentFormat: row.raw_body_format,
@@ -356,4 +358,13 @@ export function parseAppliedTemplateSnapshot(
 ): AppliedTemplateSnapshot | null {
   const result = appliedTemplateSnapshotSchema.safeParse(parseJson(value));
   return result.success ? result.data.appliedTemplate : null;
+}
+
+const headingsMetadataSchema = z.object({
+  headings: z.object({ updatedAt: z.string() }).nullish(),
+});
+
+export function parseHeadingsUpdatedAt(value: string): string {
+  const result = headingsMetadataSchema.safeParse(parseJson(value));
+  return result.success ? (result.data.headings?.updatedAt ?? "") : "";
 }

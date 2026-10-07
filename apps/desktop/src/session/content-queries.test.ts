@@ -10,6 +10,7 @@ import {
   loadActiveSessionIds,
   loadSessionContentSnapshot,
   parseAppliedTemplateSnapshot,
+  parseHeadingsUpdatedAt,
 } from "./content-queries";
 
 describe("session content SQLite snapshots", () => {
@@ -33,6 +34,10 @@ describe("session content SQLite snapshots", () => {
           appliedTemplate: {
             templateId: "template-1",
             sections: ["Raw note"],
+          },
+          headings: {
+            key: "Raw note",
+            updatedAt: "2026-07-10T09:00:00.000Z",
           },
         }),
         raw_body: JSON.stringify({
@@ -104,6 +109,7 @@ describe("session content SQLite snapshots", () => {
       eventId: "event-1",
       rawNoteId: "session-1",
       rawTemplateId: "template-1",
+      rawHeadingsUpdatedAt: "2026-07-10T09:00:00.000Z",
       rawAppliedTemplate: {
         templateId: "template-1",
         sections: ["Raw note"],
@@ -223,6 +229,19 @@ describe("session content SQLite snapshots", () => {
         }),
       ),
     ).toBeNull();
+  });
+
+  it("reads an empty headings time from malformed metadata", () => {
+    expect(parseHeadingsUpdatedAt("")).toBe("");
+    expect(parseHeadingsUpdatedAt("{}")).toBe("");
+    expect(parseHeadingsUpdatedAt(JSON.stringify({ headings: "nope" }))).toBe(
+      "",
+    );
+    expect(
+      parseHeadingsUpdatedAt(
+        JSON.stringify({ headings: { updatedAt: "2026-10-01T00:00:00Z" } }),
+      ),
+    ).toBe("2026-10-01T00:00:00Z");
   });
 
   it("normalizes title-only and legacy object snapshot sections", () => {

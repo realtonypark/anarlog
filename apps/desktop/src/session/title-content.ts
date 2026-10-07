@@ -5,6 +5,14 @@ export const documentTitlePlaceholder: PlaceholderFunction = ({ node, pos }) =>
     ? "Untitled"
     : "";
 
+export function extractSectionHeadings(content: JSONContent): string[] {
+  return (content.content ?? []).flatMap((node) => {
+    if (node.type !== "heading" || node.attrs?.level !== 2) return [];
+    const title = collectText(node).trim();
+    return title ? [title] : [];
+  });
+}
+
 export function extractFirstLineTitle(content: JSONContent) {
   const firstBlock = content.content?.[0];
   const title = collectText(firstBlock).trim();

@@ -270,6 +270,42 @@ describe("session SQLite operations", () => {
     });
   });
 
+  it("stamps changed memo headings without touching the template snapshot", async () => {
+    mocks.execute.mockResolvedValueOnce([
+      {
+        generation_metadata_json: JSON.stringify({
+          appliedTemplate: {
+            templateId: "template-1",
+            sections: ["Updates"],
+          },
+          headings: { key: "Updates", updatedAt: "2026-10-01T00:00:00.000Z" },
+        }),
+      },
+    ]);
+
+    await updateSession("session-1", {
+      raw_md: '{"type":"doc"}',
+      raw_headings_key: "Updates\nNext Steps",
+    });
+
+    const statements = mocks.executeTransaction.mock.calls[0][0] as Array<{
+      sql: string;
+      params: unknown[];
+    }>;
+    expect(statements).toHaveLength(2);
+    expect(statements[1].sql).toContain("generation_metadata_json = ?");
+    const metadata = JSON.parse(statements[1].params[0] as string) as {
+      appliedTemplate: unknown;
+      headings: { key: string; updatedAt: string };
+    };
+    expect(metadata.appliedTemplate).toEqual({
+      templateId: "template-1",
+      sections: ["Updates"],
+    });
+    expect(metadata.headings.key).toBe("Updates\nNext Steps");
+    expect(Number.isNaN(Date.parse(metadata.headings.updatedAt))).toBe(false);
+  });
+
   it("commits enhanced note content and the derived session title together", async () => {
     mocks.executeTransaction.mockResolvedValueOnce([1, 1]);
 

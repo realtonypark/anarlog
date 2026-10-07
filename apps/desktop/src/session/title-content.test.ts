@@ -6,6 +6,7 @@ import {
   documentTitlePlaceholder,
   ensureFirstLineTitle,
   extractFirstLineTitle,
+  extractSectionHeadings,
   removeDocumentTitle,
 } from "./title-content";
 
@@ -255,5 +256,35 @@ describe("ensureFirstLineTitle", () => {
     };
 
     expect(ensureFirstLineTitle(content, "Meeting Title")).toBe(content);
+  });
+});
+
+describe("extractSectionHeadings", () => {
+  it("returns trimmed level-two headings and skips the rest", () => {
+    expect(
+      extractSectionHeadings({
+        type: "doc",
+        content: [
+          {
+            type: "heading",
+            attrs: { level: 1 },
+            content: [{ type: "text", text: "Title" }],
+          },
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [
+              { type: "text", text: "  Updates " },
+              { type: "text", text: " & notes" },
+            ],
+          },
+          { type: "heading", attrs: { level: 2 } },
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Body" }],
+          },
+        ],
+      }),
+    ).toEqual(["Updates  & notes"]);
   });
 });

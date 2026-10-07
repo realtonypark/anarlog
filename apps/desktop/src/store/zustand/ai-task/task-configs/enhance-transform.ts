@@ -1,8 +1,6 @@
-import {
-  md2json,
-  parseJsonContent,
-  type JSONContent,
-} from "@anlg/editor/markdown";
+import levenshtein from "js-levenshtein-esm";
+
+import { md2json, parseJsonContent } from "@anlg/editor/markdown";
 import {
   commands as templateCommands,
   type Participant,
@@ -28,6 +26,7 @@ import {
 } from "~/session/content-queries";
 import type { AppliedTemplateSnapshot } from "~/session/queries/types";
 import { formatSessionSourceAppsContext } from "~/session/source-apps";
+import { extractSectionHeadings } from "~/session/title-content";
 import { modelSupportsImageInput } from "~/settings/ai/shared/model-capabilities";
 import type { SettingValues } from "~/settings/schema";
 import { parseDictionaryTermsJson } from "~/stt/keywords";
@@ -75,7 +74,7 @@ async function transformArgs(
   const templateRecord = await loadTemplate(templateId);
   const preferTemplate = isTemplateNewerThanMemo(
     templateRecord?.updatedAt,
-    snapshot.rawUpdatedAt,
+    snapshot.rawHeadingsUpdatedAt || snapshot.rawUpdatedAt,
   );
   const appliedSnapshot =
     snapshot.rawAppliedTemplate?.templateId === templateId
@@ -86,6 +85,7 @@ async function transformArgs(
       ? getMemoTemplateSections(snapshot, templateRecord?.sections ?? [], {
           preferTemplate,
           appliedSnapshot,
+          templateMissing: !templateRecord,
         })
       : null;
   let template: TaskArgsMapTransformed["enhance"]["template"] = templateRecord
@@ -172,28 +172,16 @@ function isTemplateNewerThanMemo(
 }
 
 function normalizeHeadingTitle(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
-function headingEditDistance(a: string, b: string): number {
-  let prev = Array.from({ length: b.length + 1 }, (_, index) => index);
-  for (let i = 1; i <= a.length; i++) {
-    const next = [i];
-    for (let j = 1; j <= b.length; j++) {
-      next[j] = Math.min(
-        prev[j] + 1,
-        next[j - 1] + 1,
-        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
-    }
-    prev = next;
-  }
-  return prev[b.length];
-}
-
-// A memo-only heading that differs from a live template title by a small edit
-// is rename residue from a template edit (e.g. "To-dos" vs "To do"), not a
-// user addition, so the live template title wins and the stale heading drops.
+// Similarity is a hint, not proof, of a rename. Limits: short headings need
+// near-exact matches (a 30% relative threshold, as in enhance-validator), so
+// "Tasks"/"Risks" stay separate; dissimilar renames and template removals are
+// intentionally kept as memo-only sections because without a snapshot they
+// are indistinguishable from genuine user additions. This check runs only
+// when the template is authoritative (preferTemplate), never to overrule a
+// memo-side rename.
 function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
   const normalized = normalizeHeadingTitle(title);
   if (!normalized) {
@@ -201,9 +189,13 @@ function looksLikeRenameOf(title: string, templateTitles: string[]): boolean {
   }
   return templateTitles.some((templateTitle) => {
     const candidate = normalizeHeadingTitle(templateTitle);
-    return (
-      candidate.length > 0 && headingEditDistance(normalized, candidate) <= 2
+    if (!candidate) {
+      return false;
+    }
+    const threshold = Math.floor(
+      Math.min(normalized.length, candidate.length) * 0.3,
     );
+    return levenshtein(normalized, candidate) <= threshold;
   });
 }
 
@@ -366,6 +358,7 @@ function getMemoTemplateSections(
   options: {
     preferTemplate?: boolean;
     appliedSnapshot?: AppliedTemplateSnapshot | null;
+    templateMissing?: boolean;
   } = {},
 ): TemplateSection[] {
   const document =
@@ -375,22 +368,23 @@ function getMemoTemplateSections(
   const originalByTitle = new Map(
     originalSections.map((section) => [section.title.trim(), section]),
   );
-  const headings = (document.content ?? []).flatMap((node) => {
-    if (node.type !== "heading" || node.attrs?.level !== 2) return [];
-    const title = getNodeText(node).trim();
-    return title ? [title] : [];
-  });
+  const headings = extractSectionHeadings(document);
   if (headings.length === 0) {
     return [];
   }
-  if (originalSections.length === 0) {
-    // No live template (deleted, failed to load, or section-less): the memo
-    // headings are the only section signal. Skip the merge so snapshot-backed
-    // headings are not mistaken for template removals.
+
+  const {
+    preferTemplate = false,
+    appliedSnapshot = null,
+    templateMissing = false,
+  } = options;
+  if (templateMissing) {
+    // No live template (deleted or failed to load): the memo headings are the
+    // only section signal. Skip the merge so snapshot-backed headings are not
+    // mistaken for template removals. An existing but empty template still
+    // merges, so explicitly cleared sections stay cleared.
     return headings.map((title) => ({ title, description: "" }));
   }
-
-  const { preferTemplate = false, appliedSnapshot = null } = options;
   if (appliedSnapshot) {
     return mergeWithAppliedSnapshot(
       headings,
@@ -402,7 +396,7 @@ function getMemoTemplateSections(
   // Without a snapshot, titles and positions alone cannot tell a memo
   // rename from a template edit when both sides changed the same position
   // (e.g. a memo-added heading where the template later added a section).
-  // When the template was saved after the memo was last written, the
+  // When the template was saved after the memo headings last changed, the
   // divergence most likely comes from the template edit, so the live
   // template takes authority. Otherwise a rename keeps each edited heading
   // in its template position.
@@ -462,12 +456,6 @@ function getMemoTemplateSections(
     })),
     ...memoOnly,
   ];
-}
-
-function getNodeText(node: JSONContent): string {
-  return (
-    node.text ?? node.content?.map((child) => getNodeText(child)).join("") ?? ""
-  );
 }
 
 async function loadTemplate(templateId: string | undefined) {
