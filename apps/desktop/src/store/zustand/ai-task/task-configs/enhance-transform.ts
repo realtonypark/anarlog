@@ -174,6 +174,64 @@ function isTemplateNewerThanMemo(
   return templateTime > memoTime;
 }
 
+type HeadingGap = {
+  memo: Array<{ title: string; index: number }>;
+  base: Array<{ title: string; index: number }>;
+};
+
+// Splits memo headings and snapshot titles into gaps between their
+// longest-common-subsequence anchors. Headings both sides share (even in a
+// different order) anchor the alignment, so insertions and moves do not
+// shift the pairing of what changed between them.
+function alignHeadingGaps(memo: string[], base: string[]): HeadingGap[] {
+  const lengths: number[][] = Array.from({ length: memo.length + 1 }, () =>
+    new Array<number>(base.length + 1).fill(0),
+  );
+  for (let i = memo.length - 1; i >= 0; i--) {
+    for (let j = base.length - 1; j >= 0; j--) {
+      lengths[i][j] =
+        memo[i] === base[j]
+          ? lengths[i + 1][j + 1] + 1
+          : Math.max(lengths[i + 1][j], lengths[i][j + 1]);
+    }
+  }
+  const anchors: Array<{ memo: number; base: number }> = [];
+  let i = 0;
+  let j = 0;
+  while (i < memo.length && j < base.length) {
+    if (memo[i] === base[j]) {
+      anchors.push({ memo: i, base: j });
+      i++;
+      j++;
+    } else if (lengths[i + 1][j] >= lengths[i][j + 1]) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  const gaps: HeadingGap[] = [];
+  let prevMemo = -1;
+  let prevBase = -1;
+  const pushGap = (nextMemo: number, nextBase: number) => {
+    const memoGap = memo
+      .slice(prevMemo + 1, nextMemo)
+      .map((title, offset) => ({ title, index: prevMemo + 1 + offset }));
+    const baseGap = base
+      .slice(prevBase + 1, nextBase)
+      .map((title, offset) => ({ title, index: prevBase + 1 + offset }));
+    if (memoGap.length > 0 || baseGap.length > 0) {
+      gaps.push({ memo: memoGap, base: baseGap });
+    }
+    prevMemo = nextMemo;
+    prevBase = nextBase;
+  };
+  for (const anchor of anchors) {
+    pushGap(anchor.memo, anchor.base);
+  }
+  pushGap(memo.length, base.length);
+  return gaps;
+}
+
 function mergeWithAppliedSnapshot(
   headings: string[],
   snapshotSections: AppliedTemplateSection[],
@@ -206,20 +264,35 @@ function mergeWithAppliedSnapshot(
     }));
   }
 
+  // Pair memo-only headings with base-only headings inside each aligned
+  // gap: equal-length gaps are positional renames, so a memo insertion
+  // before a renamed heading no longer shifts the pairing. The base title
+  // must survive in the live template; when the template changed it too,
+  // both headings stand alone instead of guessing.
   const renameTarget = new Map<string, number>();
-  headings.forEach((title, index) => {
-    if (templateByTitle.has(title) || snapshotSet.has(title)) {
-      return;
-    }
-    const replaced = snapshotTitles[index];
+  for (const gap of alignHeadingGaps(headings, snapshotTitles)) {
+    const memoCandidates = gap.memo.filter(
+      (candidate) =>
+        !templateByTitle.has(candidate.title) &&
+        !snapshotSet.has(candidate.title),
+    );
+    const baseCandidates = gap.base.filter(
+      (candidate) => !memoSet.has(candidate.title),
+    );
     if (
-      replaced !== undefined &&
-      !memoSet.has(replaced) &&
-      templateByTitle.has(replaced)
+      memoCandidates.length !== baseCandidates.length ||
+      memoCandidates.length === 0
     ) {
-      renameTarget.set(replaced, index);
+      continue;
     }
-  });
+    memoCandidates.forEach((candidate, position) => {
+      const base = baseCandidates[position]?.title;
+      if (base === undefined || !templateByTitle.has(base)) {
+        return;
+      }
+      renameTarget.set(base, candidate.index);
+    });
+  }
 
   const result: TemplateSection[] = [];
   const consumedMemo = new Set<number>();

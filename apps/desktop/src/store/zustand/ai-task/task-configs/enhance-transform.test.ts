@@ -652,6 +652,210 @@ describe("enhanceTransform.transformArgs", () => {
     ]);
   });
 
+  it("keeps guidance for a rename below a memo-added heading", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-06T00:00:00.000Z",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: [
+          { title: "Updates", description: "Recent changes" },
+          { title: "Action Items", description: "Follow-ups" },
+        ],
+      },
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: ["Custom", "Updates", "Next Steps"].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections).toEqual([
+      { title: "Updates", description: "Recent changes" },
+      { title: "Next Steps", description: "Follow-ups" },
+      { title: "Custom", description: "" },
+    ]);
+  });
+
+  it("pairs rewritten headings with applied sections by relative position", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-06T00:00:00.000Z",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: [
+          { title: "Alpha", description: "First" },
+          { title: "Beta", description: "Second" },
+        ],
+      },
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: ["One", "Two"].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "Pair",
+      description: "Rewrite",
+      updatedAt: "2026-10-05T00:00:00Z",
+      sections: [
+        { title: "Alpha", description: "First" },
+        { title: "Beta", description: "Second" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections).toEqual([
+      { title: "One", description: "First" },
+      { title: "Two", description: "Second" },
+    ]);
+  });
+
+  it("keeps both headings when template and memo change the same section", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-06T00:00:00.000Z",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: [
+          { title: "Updates", description: "Recent changes" },
+          { title: "Action Items", description: "Follow-ups" },
+        ],
+      },
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: ["Updates", "Next Steps"].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-07T00:00:00Z",
+      sections: [
+        { title: "Updates", description: "Recent changes" },
+        { title: "Follow-ups List", description: "Tracked follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections).toEqual([
+      { title: "Updates", description: "Recent changes" },
+      { title: "Follow-ups List", description: "Tracked follow-ups" },
+      { title: "Next Steps", description: "" },
+    ]);
+  });
+
+  it("keeps template order when the memo reordered and the template grew", async () => {
+    mocks.loadSessionContentSnapshot.mockResolvedValue({
+      ...createSnapshot(),
+      rawTemplateId: "template-1",
+      rawUpdatedAt: "2026-10-06T00:00:00.000Z",
+      rawAppliedTemplate: {
+        templateId: "template-1",
+        sections: [
+          { title: "Updates", description: "Recent changes" },
+          { title: "Action Items", description: "Follow-ups" },
+        ],
+      },
+      rawContent: JSON.stringify({
+        type: "doc",
+        content: ["Action Items", "Updates"].flatMap((title) => [
+          {
+            type: "heading",
+            attrs: { level: 2 },
+            content: [{ type: "text", text: title }],
+          },
+          { type: "paragraph" },
+        ]),
+      }),
+      rawContentFormat: "prosemirror_json",
+    });
+    mocks.getTemplateById.mockResolvedValue({
+      title: "1:1 Meeting",
+      description: "Weekly conversation",
+      updatedAt: "2026-10-07T00:00:00Z",
+      sections: [
+        { title: "TL;DR", description: "One-sentence overview" },
+        { title: "Updates", description: "Recent changes" },
+        { title: "Action Items", description: "Follow-ups" },
+      ],
+    });
+
+    const result = await enhanceTransform.transformArgs(
+      {
+        sessionId: "session-1",
+        enhancedNoteId: "note-1",
+        templateId: "template-1",
+      },
+      settingsValues,
+    );
+
+    expect(result.template?.sections.map((section) => section.title)).toEqual([
+      "TL;DR",
+      "Updates",
+      "Action Items",
+    ]);
+  });
+
   it("omits sections the memo deleted after they were applied", async () => {
     mocks.loadSessionContentSnapshot.mockResolvedValue({
       ...createSnapshot(),
