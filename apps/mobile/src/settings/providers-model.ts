@@ -251,6 +251,12 @@ export const SUMMARY_PROVIDERS = [
     model: "",
   },
   {
+    id: "ramp_router",
+    name: "Ramp Router",
+    baseUrl: "https://api.router.com/v1",
+    model: "",
+  },
+  {
     id: "venice",
     name: "Venice",
     baseUrl: "https://api.venice.ai/api/v1",

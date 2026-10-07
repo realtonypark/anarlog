@@ -1416,6 +1416,43 @@ test("Azure resource URLs use the v1 endpoint without duplicating its path", asy
   }
 });
 
+test("Ramp Router summaries use the Responses API", async () => {
+  const { summaryRequest } = await import("../data/provider-summary.ts");
+  const { readSummaryText } = await import("../data/summary-model.ts");
+  const request = summaryRequest(
+    {
+      provider: "ramp_router",
+      baseUrl: "https://api.router.com/v1",
+      model: "gpt-6-luna",
+      apiKey: "synthetic-key",
+    },
+    "Summarize",
+    "Notes",
+    "",
+  );
+  assert.equal(request.url, "https://api.router.com/v1/responses");
+  assert.equal(request.body.model, "gpt-6-luna");
+  assert.equal(request.body.instructions, "Summarize");
+  assert.equal(request.body.input, "Notes");
+  assert.ok(!("messages" in request.body));
+  assert.equal(request.headers.Authorization, "Bearer synthetic-key");
+  assert.equal(
+    readSummaryText("ramp_router", {
+      output: [
+        { type: "reasoning", content: [{ type: "text", text: "hidden" }] },
+        {
+          type: "message",
+          content: [{ type: "output_text", text: "Ramp summary" }],
+        },
+      ],
+    }),
+    "Ramp summary",
+  );
+  assert.throws(() =>
+    readSummaryText("ramp_router", { output: [{ type: "reasoning" }] }),
+  );
+});
+
 const { discoverProviderModels, parseProviderModels } =
   await import("./provider-models.ts");
 const { presetProviderModels } = await import("./provider-model-catalog.ts");

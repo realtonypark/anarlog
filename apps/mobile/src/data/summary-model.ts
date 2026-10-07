@@ -20,6 +20,10 @@ export function readSummaryText(provider: string, payload: unknown): string {
     candidates?: Array<{
       content?: { parts?: Array<{ text?: unknown; thought?: boolean }> };
     }>;
+    output?: Array<{
+      type?: string;
+      content?: Array<{ type?: string; text?: unknown }>;
+    }>;
   };
   const text =
     provider === "anthropic"
@@ -34,7 +38,17 @@ export function readSummaryText(provider: string, payload: unknown): string {
             ?.filter((part) => !part.thought && typeof part.text === "string")
             .map((part) => part.text)
             .join("\n")
-        : body.choices?.[0]?.message?.content;
+        : provider === "ramp_router"
+          ? body.output
+              ?.filter((item) => item.type === "message")
+              .flatMap((item) => item.content ?? [])
+              .filter(
+                (part) =>
+                  part.type === "output_text" && typeof part.text === "string",
+              )
+              .map((part) => part.text)
+              .join("\n")
+          : body.choices?.[0]?.message?.content;
   if (typeof text !== "string" || !text.trim())
     throw new Error("The provider returned an empty summary.");
   return text.trim();

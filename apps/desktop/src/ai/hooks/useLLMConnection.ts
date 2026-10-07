@@ -407,6 +407,16 @@ const createProviderModel = (
       });
       return wrapWithThinkingMiddleware(provider(conn.modelId));
     }
+    case "ramp_router": {
+      // Router has no Chat Completions surface, so route explicitly through
+      // Responses instead of the generic OpenAI-compatible chat client.
+      const provider = createOpenAI({
+        fetch: providerFetch,
+        baseURL: conn.baseUrl,
+        apiKey: conn.apiKey,
+      });
+      return wrapWithThinkingMiddleware(provider.responses(conn.modelId));
+    }
 
     case "azure_openai": {
       const provider = createAzure({
