@@ -5,11 +5,13 @@ import type { MentionConfig } from "@anlg/editor/widgets";
 import { useTimelineSessionsTable } from "~/calendar/queries";
 import { useHumans, useOrganizations } from "~/contacts/queries";
 import { useSearchEngine } from "~/search/contexts/engine";
+import { useFolderPaths } from "~/session/queries/folders";
 
 export function useMentionConfig(): MentionConfig {
   const sessions = useTimelineSessionsTable();
   const humans = useHumans();
   const organizations = useOrganizations();
+  const folderPaths = useFolderPaths();
   const { search } = useSearchEngine();
 
   return useMemo(
@@ -24,6 +26,12 @@ export function useMentionConfig(): MentionConfig {
         }[] = [];
 
         if (query.trim()) {
+          const needle = query.trim().toLocaleLowerCase();
+          for (const path of folderPaths) {
+            if (path.toLocaleLowerCase().includes(needle)) {
+              results.push({ id: path, type: "folder", label: path });
+            }
+          }
           const searchResults = await search(query);
           for (const hit of searchResults) {
             results.push({
@@ -57,11 +65,14 @@ export function useMentionConfig(): MentionConfig {
               });
             }
           });
+          folderPaths.forEach((path) => {
+            results.push({ id: path, type: "folder", label: path });
+          });
         }
 
         return results.slice(0, 5);
       },
     }),
-    [sessions, humans, organizations, search],
+    [sessions, humans, organizations, folderPaths, search],
   );
 }

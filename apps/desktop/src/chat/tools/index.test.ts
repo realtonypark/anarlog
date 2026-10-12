@@ -33,6 +33,7 @@ describe("chat tool registration", () => {
     expect(tools).toHaveProperty("search_meeting_content");
     expect(tools).toHaveProperty("read_folder_material");
     expect(tools).toHaveProperty("list_folders");
+    expect(tools).toHaveProperty("list_action_items");
     expect(tools).toHaveProperty("create_folder");
     expect(tools).toHaveProperty("move_meetings_to_folder");
     expect(tools).toHaveProperty("find_related_meetings");
