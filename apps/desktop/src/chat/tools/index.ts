@@ -10,7 +10,6 @@ import type {
   TranscriptPage,
 } from "@anlg/plugin-db";
 
-import { buildListActionItemsTool } from "./action-items";
 import { buildEditMemoTool } from "./edit-memo";
 import { buildEditSummaryTool } from "./edit-summary";
 import { buildReadFolderMaterialTool } from "./folder-materials";
@@ -78,10 +77,6 @@ function withToolLogging<T extends { execute?: (...args: any[]) => any }>(
 }
 
 export const buildChatTools = (deps: ToolDependencies) => ({
-  list_action_items: withToolLogging(
-    "list_action_items",
-    buildListActionItemsTool(),
-  ),
   list_folders: withToolLogging("list_folders", buildListFoldersTool()),
   create_folder: withToolLogging("create_folder", buildCreateFolderTool()),
   move_meetings_to_folder: withToolLogging(
@@ -136,10 +131,6 @@ export const buildChatTools = (deps: ToolDependencies) => ({
 });
 
 type LocalTools = {
-  list_action_items: {
-    input: InferToolInput<ReturnType<typeof buildListActionItemsTool>>;
-    output: InferToolOutput<ReturnType<typeof buildListActionItemsTool>>;
-  };
   list_folders: {
     input: InferToolInput<ReturnType<typeof buildListFoldersTool>>;
     output: InferToolOutput<ReturnType<typeof buildListFoldersTool>>;

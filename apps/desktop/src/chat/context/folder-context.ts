@@ -13,7 +13,7 @@ export async function renderFolderContext(
   const label = folderId || "No folder";
   const lines = [
     `Folder context: ${label} (${sessions.length} ${sessions.length === 1 ? "note" : "notes"})`,
-    "Answer from notes in this folder. Use get_meeting or search_meetings with the listed IDs when you need full notes or transcripts. Use list_action_items with this folder_path for all action items in the folder instead of reading every note. Use read_folder_material with a listed material ID to read a syllabus or other folder file.",
+    "Answer from notes in this folder. Use get_meeting or search_meetings with the listed IDs when you need full notes or transcripts. Use list_meetings with this folder_path to enumerate every note. Use read_folder_material with a listed material ID to read a syllabus or other folder file.",
   ];
 
   if (instructions.trim()) {
@@ -47,7 +47,9 @@ export async function renderFolderContext(
   const hiddenCount = sessions.length - visible.length;
   if (hiddenCount > 0) {
     lines.push(
-      `- and ${hiddenCount} more (use list_meetings with folder_path "${label}" to enumerate every note)`,
+      folderId
+        ? `- and ${hiddenCount} more (use list_meetings with folder_path "${folderId}" to enumerate every note)`
+        : `- and ${hiddenCount} more`,
     );
   }
 

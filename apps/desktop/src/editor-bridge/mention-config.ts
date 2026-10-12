@@ -7,6 +7,22 @@ import { useHumans, useOrganizations } from "~/contacts/queries";
 import { useSearchEngine } from "~/search/contexts/engine";
 import { useFolderPaths } from "~/session/queries/folders";
 
+function interleave<T>(lists: T[][]): T[] {
+  const items: T[] = [];
+  for (let index = 0; ; index += 1) {
+    let added = false;
+    for (const list of lists) {
+      if (index < list.length) {
+        items.push(list[index]);
+        added = true;
+      }
+    }
+    if (!added) {
+      return items;
+    }
+  }
+}
+
 export function useMentionConfig(): MentionConfig {
   const sessions = useTimelineSessionsTable();
   const humans = useHumans();
@@ -18,59 +34,53 @@ export function useMentionConfig(): MentionConfig {
     () => ({
       trigger: "@",
       handleSearch: async (query: string) => {
-        const results: {
-          id: string;
-          type: string;
-          label: string;
-          content?: string;
-        }[] = [];
-
         if (query.trim()) {
           const needle = query.trim().toLocaleLowerCase();
-          for (const path of folderPaths) {
-            if (path.toLocaleLowerCase().includes(needle)) {
-              results.push({ id: path, type: "folder", label: path });
-            }
-          }
+          const folders = folderPaths
+            .filter((path) => path.toLocaleLowerCase().includes(needle))
+            .map((path) => ({ id: path, type: "folder", label: path }));
           const searchResults = await search(query);
-          for (const hit of searchResults) {
-            results.push({
-              id: hit.document.id,
-              type: hit.document.type,
-              label: hit.document.title,
-            });
-          }
-        } else {
-          Object.entries(sessions ?? {}).forEach(([rowId, row]) => {
-            const title = row.title as string | undefined;
-            if (title) {
-              results.push({ id: rowId, type: "session", label: title });
-            }
-          });
-          humans.forEach((human) => {
-            if (human.name) {
-              results.push({
-                id: human.id,
-                type: "human",
-                label: human.name,
-              });
-            }
-          });
-          organizations.forEach((organization) => {
-            if (organization.name) {
-              results.push({
-                id: organization.id,
-                type: "organization",
-                label: organization.name,
-              });
-            }
-          });
-          folderPaths.forEach((path) => {
-            results.push({ id: path, type: "folder", label: path });
-          });
+          const hits = searchResults.map((hit) => ({
+            id: hit.document.id,
+            type: hit.document.type,
+            label: hit.document.title,
+          }));
+          return interleave([folders, hits]).slice(0, 5);
         }
 
-        return results.slice(0, 5);
+        const sessionItems = Object.entries(sessions ?? {}).flatMap(
+          ([rowId, row]) => {
+            const title = row.title as string | undefined;
+            return title ? [{ id: rowId, type: "session", label: title }] : [];
+          },
+        );
+        const humanItems = humans.flatMap((human) =>
+          human.name
+            ? [{ id: human.id, type: "human", label: human.name }]
+            : [],
+        );
+        const organizationItems = organizations.flatMap((organization) =>
+          organization.name
+            ? [
+                {
+                  id: organization.id,
+                  type: "organization",
+                  label: organization.name,
+                },
+              ]
+            : [],
+        );
+        const folderItems = folderPaths.map((path) => ({
+          id: path,
+          type: "folder",
+          label: path,
+        }));
+        return interleave([
+          sessionItems,
+          humanItems,
+          organizationItems,
+          folderItems,
+        ]).slice(0, 5);
       },
     }),
     [sessions, humans, organizations, folderPaths, search],

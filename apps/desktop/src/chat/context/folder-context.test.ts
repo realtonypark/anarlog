@@ -46,7 +46,7 @@ describe("folder chat context", () => {
     await expect(renderFolderContext("CS 101")).resolves.toEqual(
       [
         "Folder context: CS 101 (2 notes)",
-        "Answer from notes in this folder. Use get_meeting or search_meetings with the listed IDs when you need full notes or transcripts. Use list_action_items with this folder_path for all action items in the folder instead of reading every note. Use read_folder_material with a listed material ID to read a syllabus or other folder file.",
+        "Answer from notes in this folder. Use get_meeting or search_meetings with the listed IDs when you need full notes or transcripts. Use list_meetings with this folder_path to enumerate every note. Use read_folder_material with a listed material ID to read a syllabus or other folder file.",
         "",
         "- Lecture 1 (2026-08-01T09:00:00.000Z) [session-1]",
         "- Untitled (2026-08-08T09:00:00.000Z) [session-2]",
@@ -72,6 +72,20 @@ describe("folder chat context", () => {
     expect(context).toContain(
       '- and 1 more (use list_meetings with folder_path "CS 101" to enumerate every note)',
     );
+  });
+
+  it("keeps a plain count for hidden unfiled notes without a folder path", async () => {
+    mocks.loadSessionSummariesByFolder.mockResolvedValue(
+      Array.from({ length: 51 }, (_, index) => ({
+        id: `session-${index + 1}`,
+        title: `Note ${index + 1}`,
+        created_at: "2026-08-01T09:00:00.000Z",
+      })),
+    );
+
+    const context = await renderFolderContext("");
+    expect(context).toContain("\n- and 1 more");
+    expect(context).not.toContain("No folder\" to enumerate");
   });
 
   it("includes saved folder instructions", async () => {
