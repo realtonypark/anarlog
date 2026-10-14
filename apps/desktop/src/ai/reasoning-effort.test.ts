@@ -20,6 +20,12 @@ describe("reasoningProviderOptions", () => {
     ["anarlog", "Auto", "high", null],
     ["apple_foundation", "default", "high", null],
     ["openai", "gpt-5", "low", { openai: { reasoningEffort: "low" } }],
+    [
+      "ramp_router",
+      "gpt-6-luna",
+      "low",
+      { openai: { reasoningEffort: "low" } },
+    ],
     ["azure_openai", "gpt-5", "high", { azure: { reasoningEffort: "high" } }],
     [
       "anthropic",

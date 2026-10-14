@@ -276,6 +276,30 @@ const _PROVIDERS = [
     },
   },
   {
+    id: "ramp_router",
+    displayName: "Ramp Router",
+    badge: null,
+    icon: (
+      <ProviderBrandImage
+        src="/assets/ramp-router-mark.svg"
+        alt="Ramp Router"
+        preserveColor
+      />
+    ),
+    baseUrl: "https://api.router.com/v1",
+    requirements: [{ kind: "requires_config", fields: ["api_key"] }],
+    links: {
+      models: {
+        label: "Available models",
+        url: "https://router.com/models",
+      },
+      setup: {
+        label: "API setup",
+        url: "https://docs.router.com/",
+      },
+    },
+  },
+  {
     id: "openai",
     displayName: "OpenAI",
     badge: null,
@@ -692,6 +716,7 @@ const PROVIDER_ORDER = [
   "anthropic",
   "google_generative_ai",
   "openrouter",
+  "ramp_router",
   "venice",
   "moonshot",
   "zai",

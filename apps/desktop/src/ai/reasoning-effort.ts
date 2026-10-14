@@ -52,6 +52,7 @@ export const reasoningProviderOptions = (
   switch (providerId) {
     case "openai":
     case "chatgpt":
+    case "ramp_router":
       return { openai: { reasoningEffort: effort } };
     case "azure_openai":
       return { azure: { reasoningEffort: effort } };

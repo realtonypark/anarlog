@@ -86,6 +86,7 @@ describe("getLlmProviderStatus", () => {
   });
 
   test.each([
+    ["ramp_router", "https://api.router.com/v1"],
     ["moonshot", "https://api.moonshot.ai/v1"],
     ["zai", "https://api.z.ai/api/paas/v4"],
     ["deepseek", "https://api.deepseek.com"],
