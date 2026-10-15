@@ -8,6 +8,7 @@ import {
 } from "~/session/content-mutations";
 import { loadSessionContentSnapshot } from "~/session/content-queries";
 import { ensureFirstLineTitle } from "~/session/title-content";
+import { meetingPerformanceEnabled } from "~/shared/meeting-performance";
 import { hasLiveSessionTitleDraft } from "~/store/zustand/live-title";
 
 const GENERATED_TITLE_MAX_LENGTH = 160;
@@ -46,7 +47,9 @@ export async function persistGeneratedTitle({
     return false;
   }
 
-  const snapshot = await loadSessionContentSnapshot(args.sessionId);
+  const snapshot = await loadSessionContentSnapshot(args.sessionId, {
+    includeTranscriptWords: !meetingPerformanceEnabled,
+  });
   if (!snapshot || snapshot.title.trim()) {
     return false;
   }

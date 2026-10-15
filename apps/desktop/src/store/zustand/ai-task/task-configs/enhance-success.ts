@@ -18,6 +18,7 @@ import { persistGeneratedEnhancedNote } from "~/session/content-mutations";
 import { loadSessionContentSnapshot } from "~/session/content-queries";
 import { requestAppAttention } from "~/shared/app-attention";
 import { playCompletionSound } from "~/shared/completion-sound";
+import { meetingPerformanceEnabled } from "~/shared/meeting-performance";
 import { id } from "~/shared/utils";
 import { hasLiveSessionTitleDraft } from "~/store/zustand/live-title";
 
@@ -61,7 +62,9 @@ export const runEnhanceSuccess = async ({
   const { text: preparedText, tag_names: tagNames } = preparedResult.data;
   const textWithTags = preparedResult.data.text_with_tags;
   const cloudsyncLeaseKey = `${taskId}:${id()}`;
-  const initialSnapshot = await loadSessionContentSnapshot(args.sessionId);
+  const initialSnapshot = await loadSessionContentSnapshot(args.sessionId, {
+    includeTranscriptWords: !meetingPerformanceEnabled,
+  });
   if (!initialSnapshot) {
     throw new Error(`Session ${args.sessionId} no longer exists`);
   }
@@ -100,7 +103,9 @@ export const runEnhanceSuccess = async ({
 
   await beginCloudsyncActivity("enhance", cloudsyncLeaseKey);
   try {
-    const snapshot = await loadSessionContentSnapshot(args.sessionId);
+    const snapshot = await loadSessionContentSnapshot(args.sessionId, {
+      includeTranscriptWords: !meetingPerformanceEnabled,
+    });
     if (!snapshot) {
       throw new Error(`Session ${args.sessionId} no longer exists`);
     }

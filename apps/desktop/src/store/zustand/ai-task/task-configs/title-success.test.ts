@@ -80,8 +80,18 @@ describe("titleSuccess.onSuccess", () => {
   });
 
   it("persists a trimmed title without adding it to the memo", async () => {
+    const snapshot = createSnapshot();
+    Object.defineProperty(snapshot, "transcripts", {
+      get: () => {
+        throw new Error("Title persistence must not read transcript words");
+      },
+    });
+    mocks.loadSessionContentSnapshot.mockResolvedValue(snapshot);
     await titleSuccess.onSuccess?.(createParams({ text: "  Weekly sync  " }));
 
+    expect(mocks.loadSessionContentSnapshot).toHaveBeenCalledWith("session-1", {
+      includeTranscriptWords: false,
+    });
     expect(mocks.applyGeneratedSessionTitle).toHaveBeenCalledWith({
       sessionId: "session-1",
       currentTitle: "",
