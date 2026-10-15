@@ -1,0 +1,19 @@
+apps/desktop/src/shared/perf/interaction-profiler.ts
+  s_0316cc4e0481ad::t_cd83bb7bb3fb79 75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bbaa800ff86ad5c4c12ef8c4dfba4142d9ba5f09",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
