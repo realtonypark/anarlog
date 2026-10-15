@@ -228,14 +228,10 @@ pub(super) async fn run_direct_batch<A: BatchSttAdapter>(
 
     match segment_plan(&params.file_path, audio_duration, limit) {
         Some(segment_duration) => {
-            // Temporary opt-in until provider measurements validate concurrent uploads.
-            let concurrency = if std::env::var_os("ANARLOG_BATCH_SEGMENT_CONCURRENCY")
-                .is_some_and(|value| value == "2")
-            {
-                2
-            } else {
-                1
-            };
+            let concurrency = segment_upload_concurrency(
+                provider,
+                std::env::var_os("ANARLOG_BATCH_SEGMENT_CONCURRENCY").as_deref(),
+            );
             run_segmented_batch::<A>(
                 provider,
                 params,
@@ -247,6 +243,20 @@ pub(super) async fn run_direct_batch<A: BatchSttAdapter>(
             .await
         }
         None => run_direct_batch_with_timeout::<A>(provider, params, listen_params, timeout).await,
+    }
+}
+
+// Temporary serial rollback; remove after the OpenRouter rollout is validated.
+pub(super) fn segment_upload_concurrency(
+    provider: &str,
+    override_value: Option<&std::ffi::OsStr>,
+) -> usize {
+    if provider == AdapterKind::OpenRouter.to_string()
+        && override_value != Some(std::ffi::OsStr::new("1"))
+    {
+        2
+    } else {
+        1
     }
 }
 

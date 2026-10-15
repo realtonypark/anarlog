@@ -1132,3 +1132,24 @@ async fn concurrent_segments_keep_order_offsets_and_cleanup_on_error_or_cancella
         }
     }
 }
+
+#[test]
+fn paired_uploads_are_limited_to_openrouter_and_allow_serial_rollback() {
+    for (provider, override_value, expected) in [
+        ("openrouter", None, 2),
+        ("openrouter", Some("1"), 1),
+        ("openrouter", Some("2"), 2),
+        ("openrouter", Some("invalid"), 2),
+        ("openai", None, 1),
+        ("openai", Some("2"), 1),
+    ] {
+        assert_eq!(
+            super::direct::segment_upload_concurrency(
+                provider,
+                override_value.map(std::ffi::OsStr::new),
+            ),
+            expected,
+            "provider={provider}, override={override_value:?}",
+        );
+    }
+}
