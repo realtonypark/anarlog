@@ -33,6 +33,58 @@ struct PendingWordGroup {
 pub fn coalesce_live_transcript_deltas(
     deltas: &[StoredLiveTranscriptDelta],
 ) -> StoredLiveTranscriptDelta {
+    // Remove the rollback path after the next stable release validates indexed coalescing.
+    if std::env::var_os("ANARLOG_TRANSCRIPT_COALESCE_LEGACY").is_some_and(|value| value == "1") {
+        return coalesce_live_transcript_deltas_legacy(deltas);
+    }
+
+    let mut pending = HashMap::new();
+    let mut replaced_root_ids = Vec::new();
+    let mut replaced_root_set = HashSet::new();
+    let mut next_order = 0_usize;
+
+    for delta in deltas {
+        for replaced_id in &delta.replaced_ids {
+            let may_exist_in_persisted_base = pending
+                .remove(replaced_id.as_str())
+                .is_none_or(|(_, _, may_exist)| may_exist);
+            if may_exist_in_persisted_base && replaced_root_set.insert(replaced_id.as_str()) {
+                replaced_root_ids.push(replaced_id.clone());
+            }
+        }
+
+        let mut next_indices = HashMap::<&str, usize>::new();
+        let mut next_words: Vec<(&str, Vec<FinalizedWord>)> = Vec::new();
+        for word in &delta.new_words {
+            if let Some(&index) = next_indices.get(word.id.as_str()) {
+                next_words[index].1.push(word.clone());
+            } else {
+                next_indices.insert(word.id.as_str(), next_words.len());
+                next_words.push((&word.id, vec![word.clone()]));
+            }
+        }
+
+        for (word_id, words) in next_words {
+            let may_exist_in_persisted_base = pending
+                .remove(word_id)
+                .map(|(_, _, may_exist)| may_exist)
+                .unwrap_or(delta.replaced_ids.is_empty());
+            pending.insert(word_id, (next_order, words, may_exist_in_persisted_base));
+            next_order += 1;
+        }
+    }
+
+    let mut groups = pending.into_values().collect::<Vec<_>>();
+    groups.sort_unstable_by_key(|(order, _, _)| *order);
+    StoredLiveTranscriptDelta {
+        new_words: groups.into_iter().flat_map(|(_, words, _)| words).collect(),
+        replaced_ids: replaced_root_ids,
+    }
+}
+
+fn coalesce_live_transcript_deltas_legacy(
+    deltas: &[StoredLiveTranscriptDelta],
+) -> StoredLiveTranscriptDelta {
     let mut pending = PendingWrite::default();
     for delta in deltas {
         merge_delta(&mut pending, delta);
@@ -927,6 +979,55 @@ mod tests {
         assert_eq!(coalesced.new_words.len(), 1);
         assert_eq!(coalesced.new_words[0].id, "word-1");
         assert_eq!(coalesced.new_words[0].text, "final");
+    }
+
+    #[test]
+    fn coalescing_preserves_duplicate_groups_order_and_root_replacements() {
+        let make_word = |id: &str, text: &str| finalized_word(id, text, 0, 100, 0, None);
+        let deltas = vec![
+            delta(
+                vec![
+                    make_word("a", "first a"),
+                    make_word("b", "first b"),
+                    make_word("a", "second a"),
+                    make_word("c", "first c"),
+                ],
+                &[],
+            ),
+            delta(
+                vec![
+                    make_word("a", "updated a"),
+                    make_word("d", "first d"),
+                    make_word("d", "second d"),
+                    make_word("c", "updated c"),
+                ],
+                &["b", "external"],
+            ),
+            delta(
+                vec![
+                    make_word("b", "updated b"),
+                    make_word("a", "final a"),
+                    make_word("a", "final duplicate a"),
+                ],
+                &["d", "a", "external"],
+            ),
+        ];
+        let coalesced = coalesce_live_transcript_deltas(&deltas);
+
+        assert_eq!(coalesced.replaced_ids, ["b", "external", "a"]);
+        assert_eq!(
+            coalesced
+                .new_words
+                .iter()
+                .map(|word| (word.id.as_str(), word.text.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("c", "updated c"),
+                ("b", "updated b"),
+                ("a", "final a"),
+                ("a", "final duplicate a"),
+            ]
+        );
     }
 
     #[test]
