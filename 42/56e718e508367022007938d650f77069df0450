@@ -1,0 +1,19 @@
+crates/listener2-core/src/batch/consolidate.rs
+  s_0316cc4e0481ad::t_660897dd59b6e9 801
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4256e718e508367022007938d650f77069df0450",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
