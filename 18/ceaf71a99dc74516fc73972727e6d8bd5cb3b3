@@ -1,0 +1,21 @@
+crates/listener2-core/src/batch/simple/direct.rs
+  s_0316cc4e0481ad::t_9942a6e0e8df53 4,231-247,253,259,264-269,271-286,288
+crates/listener2-core/src/batch/simple/tests.rs
+  s_0316cc4e0481ad::t_563b8f47778561 903-1134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "18ceaf71a99dc74516fc73972727e6d8bd5cb3b3",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
