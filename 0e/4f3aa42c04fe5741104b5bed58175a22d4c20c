@@ -1,0 +1,25 @@
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-success.ts
+  s_0316cc4e0481ad::t_12db941bdf3313 64,103
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-workflow.test.ts
+  s_0316cc4e0481ad::t_5496d50b4c0735 2
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-workflow.ts
+  s_0316cc4e0481ad::t_e99c3be17fa68f 36
+apps/desktop/src/store/zustand/ai-task/task-configs/title-success.ts
+  s_0316cc4e0481ad::t_dff349278863c9 49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0e4f3aa42c04fe5741104b5bed58175a22d4c20c",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
