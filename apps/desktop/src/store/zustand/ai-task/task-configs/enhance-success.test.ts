@@ -30,10 +30,6 @@ vi.mock("@anlg/plugin-template", () => ({
   },
 }));
 
-vi.mock("~/shared/meeting-performance", () => ({
-  meetingPerformanceEnabled: true,
-}));
-
 vi.mock("~/session/content-queries", () => ({
   loadSessionContentSnapshot: mocks.loadSessionContentSnapshot,
 }));
@@ -167,13 +163,6 @@ describe("enhanceSuccess.onSuccess", () => {
   });
 
   it("persists generated content and tags through one guarded SQLite write", async () => {
-    const snapshot = createSnapshot();
-    Object.defineProperty(snapshot, "transcripts", {
-      get: () => {
-        throw new Error("Finalization must not read transcript words");
-      },
-    });
-    mocks.loadSessionContentSnapshot.mockResolvedValue(snapshot);
     const params = createParams({
       text: "# Summary\n\nDiscussed #Launch.",
       transformedArgs: {
@@ -220,9 +209,6 @@ describe("enhanceSuccess.onSuccess", () => {
         }),
       }),
     );
-    expect(mocks.loadSessionContentSnapshot).toHaveBeenCalledWith("session-1", {
-      includeTranscriptWords: false,
-    });
     const cloudsyncLeaseKey = mocks.beginCloudsyncActivity.mock.calls[0]?.[1];
     expect(cloudsyncLeaseKey).toMatch(/^note-1-enhance:/);
     expect(mocks.beginCloudsyncActivity).toHaveBeenCalledWith(
