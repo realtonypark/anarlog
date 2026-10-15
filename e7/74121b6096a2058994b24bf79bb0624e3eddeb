@@ -1,0 +1,16 @@
+apps/desktop/src/session/components/folder-picker.test.tsx
+  h_05e5164a29872e 238-243
+apps/desktop/src/session/components/folder-picker.tsx
+  h_05e5164a29872e 282
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e774121b6096a2058994b24bf79bb0624e3eddeb",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
