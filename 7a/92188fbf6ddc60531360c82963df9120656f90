@@ -1,0 +1,25 @@
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-success.test.ts
+  s_0316cc4e0481ad::t_6b96901407fb1e 166-172,219-221
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-success.ts
+  s_0316cc4e0481ad::t_af57c7d932bed4 21,65-67,106-108
+apps/desktop/src/store/zustand/ai-task/task-configs/title-success.test.ts
+  s_0316cc4e0481ad::t_40a696ec68f2c6 83-89,92-94
+apps/desktop/src/store/zustand/ai-task/task-configs/title-success.ts
+  s_0316cc4e0481ad::t_b2f7974a635d6e 11,50-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7a92188fbf6ddc60531360c82963df9120656f90",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
