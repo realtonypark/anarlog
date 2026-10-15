@@ -30,6 +30,10 @@ vi.mock("@anlg/plugin-template", () => ({
   },
 }));
 
+vi.mock("~/shared/meeting-performance", () => ({
+  meetingPerformanceEnabled: true,
+}));
+
 vi.mock("~/session/content-queries", () => ({
   loadSessionContentSnapshot: mocks.loadSessionContentSnapshot,
 }));
