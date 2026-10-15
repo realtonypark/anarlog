@@ -80,7 +80,16 @@ where
         .iter()
         .map(|file| {
             file.reopen()
-                .map(BufWriter::new)
+                .map(|file| {
+                    // Temporary rollback until the larger buffer is validated in production.
+                    if std::env::var_os("ANARLOG_LOCAL_AUDIO_BUFFER_LEGACY")
+                        .is_some_and(|value| value == "1")
+                    {
+                        BufWriter::new(file)
+                    } else {
+                        BufWriter::with_capacity(64 * 1024, file)
+                    }
+                })
                 .map_err(anlg_audio_utils::Error::from)
                 .and_then(|file| hound::WavWriter::new(file, spec).map_err(Into::into))
         })
