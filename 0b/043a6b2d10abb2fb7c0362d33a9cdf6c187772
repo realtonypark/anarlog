@@ -1,0 +1,23 @@
+apps/desktop/src/shared/meeting-performance.ts
+  s_0316cc4e0481ad::t_4c41bb64d0295d 1-3
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-workflow.test.ts
+  s_0316cc4e0481ad::t_0b974864916ef6 2,5,141-184
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-workflow.ts
+  s_0316cc4e0481ad::t_b33210e77d38d2 20,37-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b043a6b2d10abb2fb7c0362d33a9cdf6c187772",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
