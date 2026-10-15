@@ -1,0 +1,21 @@
+apps/desktop/src/stt/capture-lifecycle.ts
+  s_0316cc4e0481ad::t_5d70757c2208e3 64,781,958-966,1270,1272-1278
+apps/desktop/src/stt/useStartListening.test.ts
+  s_0316cc4e0481ad::t_e75eb2e9a8261e 70,135,377-382,641,2029-2117
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1a683eb449daf27244fb5460e2f171808bedb5b0",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
