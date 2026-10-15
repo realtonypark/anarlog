@@ -1,0 +1,21 @@
+apps/desktop/src/store/zustand/ai-task/task-configs/enhance-success.test.ts
+  s_0316cc4e0481ad::t_4ddb333043e3fc 33-36
+apps/desktop/src/store/zustand/ai-task/task-configs/title-success.test.ts
+  s_0316cc4e0481ad::t_501a675139fe27 18-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7bd4acdc72e8990a0f1d5182667f1a4b17401828",
+  "prompts": {},
+  "sessions": {
+    "s_0316cc4e0481ad": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13de4-3ed0-7342-b7ca-65ded28a0394",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
