@@ -67,6 +67,7 @@ const {
   clearCaptureLifecycleMarkerMock,
   requestCaptureRecoveryMock,
   waitForSessionSearchIndexMock,
+  meetingPerformance,
   useConfigValueMock,
   useSTTConnectionMock,
   isSupportedLanguagesLiveMock,
@@ -131,6 +132,7 @@ const {
   clearCaptureLifecycleMarkerMock: vi.fn(),
   requestCaptureRecoveryMock: vi.fn(),
   waitForSessionSearchIndexMock: vi.fn(),
+  meetingPerformance: { enabled: true },
   useConfigValueMock: vi.fn(),
   useSTTConnectionMock: vi.fn(),
   isSupportedLanguagesLiveMock: vi.fn(),
@@ -370,6 +372,12 @@ vi.mock("~/stt/capture-lifecycle-storage", () => ({
 
 vi.mock("~/stt/capture-recovery-requests", () => ({
   requestCaptureRecovery: requestCaptureRecoveryMock,
+}));
+
+vi.mock("~/shared/meeting-performance", () => ({
+  get meetingPerformanceEnabled() {
+    return meetingPerformance.enabled;
+  },
 }));
 
 vi.mock("~/stt/search-index-consistency", () => ({
@@ -630,6 +638,7 @@ describe("useStartListening", () => {
     clearCaptureLifecycleMarkerMock.mockResolvedValue(undefined);
     requestCaptureRecoveryMock.mockResolvedValue(undefined);
     waitForSessionSearchIndexMock.mockResolvedValue(undefined);
+    meetingPerformance.enabled = true;
     beginCloudsyncActivityMock.mockResolvedValue(undefined);
     endCloudsyncActivityMock.mockResolvedValue(undefined);
     flushCanonicalSessionEditorChangesMock.mockResolvedValue(undefined);
@@ -2016,6 +2025,95 @@ describe("useStartListening", () => {
     );
     expect(deleteProcessedAudioForRetentionMock).not.toHaveBeenCalled();
   });
+
+  test.each([
+    { enabled: true, failure: "none" },
+    { enabled: false, failure: "none" },
+    { enabled: true, failure: "index" },
+    { enabled: true, failure: "summary" },
+    { enabled: true, failure: "cleanup" },
+  ])(
+    "keeps stop completion gated while preparing the summary (enabled: $enabled, failure: $failure)",
+    async ({ enabled, failure }) => {
+      meetingPerformance.enabled = enabled;
+      succeedNextNativePersistenceFlush();
+      vi.mocked(loadCaptureStop).mockResolvedValueOnce(50_000);
+      if (failure === "summary")
+        requestAutoEnhanceMock.mockRejectedValueOnce(
+          new Error("summary unavailable"),
+        );
+      if (failure === "cleanup")
+        clearCaptureLifecycleMarkerMock.mockRejectedValueOnce(
+          new Error("cleanup unavailable"),
+        );
+      let acknowledgeIndex!: () => void;
+      const indexed = new Promise<void>((resolve, reject) => {
+        acknowledgeIndex =
+          failure === "index"
+            ? () => reject(new Error("index unavailable"))
+            : resolve;
+      });
+      waitForSessionSearchIndexMock.mockReturnValueOnce(indexed);
+      const { result } = renderHook(() => useStartListening("session-1"));
+      await act(async () => await result.current());
+      let completed = false;
+      let stopError: unknown;
+      const stopped = startMock.mock.calls[0]![1].onStopped("session-1", {
+        durationSeconds: 42,
+        audioPath: "/tmp/session.wav",
+        requestedLiveTranscription: true,
+        liveTranscriptionActive: true,
+        needsBatchRepair: false,
+      }).then(
+        () => {
+          completed = true;
+        },
+        (error: unknown) => {
+          completed = true;
+          stopError = error;
+        },
+      );
+      try {
+        await waitFor(() =>
+          expect(waitForSessionSearchIndexMock).toHaveBeenCalled(),
+        );
+        if (enabled) {
+          await waitFor(() =>
+            expect(requestAutoEnhanceMock).toHaveBeenCalled(),
+          );
+          expect(completeCaptureTranscript).toHaveBeenCalledWith(
+            "session-1",
+            "generated-id",
+            50_000,
+          );
+          expect(flushCanonicalSessionEditorChangesMock).toHaveBeenCalledBefore(
+            requestAutoEnhanceMock,
+          );
+          expect(completeCaptureTranscript).toHaveBeenCalledBefore(
+            requestAutoEnhanceMock,
+          );
+        } else {
+          expect(requestAutoEnhanceMock).not.toHaveBeenCalled();
+        }
+        expect(completed).toBe(false);
+      } finally {
+        acknowledgeIndex();
+        await act(async () => await stopped);
+      }
+      expect(completed).toBe(true);
+      expect(requestAutoEnhanceMock).toHaveBeenCalledWith(
+        "session-1",
+        "if_empty",
+      );
+      if (failure === "cleanup")
+        expect(stopError).toEqual(new Error("cleanup unavailable"));
+      else expect(stopError).toBeUndefined();
+      if (failure === "summary" || failure === "cleanup") {
+        expect(requestCaptureRecoveryMock).toHaveBeenCalledWith("session-1");
+        expect(deleteProcessedAudioForRetentionMock).not.toHaveBeenCalled();
+      }
+    },
+  );
 
   test("finalizes repair audio only after the durable summary acknowledgement", async () => {
     let acknowledgeSummary: (() => void) | undefined;

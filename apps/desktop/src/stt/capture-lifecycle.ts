@@ -61,6 +61,7 @@ import {
 } from "~/session/queries";
 import { playCompletionSound } from "~/shared/completion-sound";
 import { useConfigValue } from "~/shared/config";
+import { meetingPerformanceEnabled } from "~/shared/meeting-performance";
 import { id } from "~/shared/utils";
 import { listenerStore } from "~/store/zustand/listener/instance";
 import type {
@@ -777,6 +778,7 @@ export function useCaptureLifecycle(sessionId: string) {
       const finalizeStoppedInner = async (
         details: Parameters<OnStoppedCallback>[1],
         requestRecoveryOnFailure: boolean,
+        searchIndex: { pending?: Promise<void> },
       ) => {
         const nativeStoppedAtMs = details.stoppedAtMs;
         if (nativeStoppedAtMs !== undefined) {
@@ -953,14 +955,15 @@ export function useCaptureLifecycle(sessionId: string) {
         const refineSpeakerDiarization =
           !usesChunkedAudio && shouldRefineSpeakerDiarization();
         if (transcriptCreated) {
-          try {
-            await waitForSessionSearchIndex(sessionId);
-          } catch (error) {
-            console.warn(
-              "[listener] search index finalization is still pending",
-              error,
-            );
-          }
+          searchIndex.pending = waitForSessionSearchIndex(sessionId).catch(
+            (error) => {
+              console.warn(
+                "[listener] search index finalization is still pending",
+                error,
+              );
+            },
+          );
+          if (!meetingPerformanceEnabled) await searchIndex.pending;
         }
 
         const postCaptureAction = pendingSummaryMode
@@ -1264,8 +1267,15 @@ export function useCaptureLifecycle(sessionId: string) {
         details: Parameters<OnStoppedCallback>[1],
         requestRecoveryOnFailure: boolean,
       ) => {
+        const searchIndex: { pending?: Promise<void> } = {};
         try {
-          await finalizeStoppedInner(details, requestRecoveryOnFailure);
+          await finalizeStoppedInner(
+            details,
+            requestRecoveryOnFailure,
+            searchIndex,
+          )
+            // Completion hooks can search, but summary preparation reads canonical SQLite.
+            .finally(() => searchIndex.pending);
         } catch (error) {
           if (!recoveryStateCleared && !recoveryPending) {
             recoveryPending = true;

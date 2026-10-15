@@ -72,7 +72,7 @@ function reportSlowEvents(entries: PerformanceEntry[]) {
       `[perf] slow ${entry.name}: total ${Math.round(entry.duration)}ms, ` +
         `handlers ${Math.round(entry.processingEnd - entry.processingStart)}ms, ` +
         `input delay ${Math.round(entry.processingStart - entry.startTime)}ms`,
-      entry.target,
+      entry.target?.nodeName,
     );
   }
 }

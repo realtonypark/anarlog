@@ -798,7 +798,7 @@ mod tests {
                     profile(2, None, vec![10.4, 11.6]),
                 ],
                 cap,
-                &[ada.clone()],
+                std::slice::from_ref(&ada),
             );
             assert_eq!(plan.mapping, vec![(0, 0), (1, 1), (2, 2)], "cap {cap:?}");
             assert_eq!(plan.identified, 1);
