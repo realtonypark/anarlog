@@ -17,6 +17,7 @@ import {
   formatSummaryDetailGuidance,
   formatSummaryLengthGuidance,
 } from "~/services/enhancer/summary-length";
+import { meetingPerformanceEnabled } from "~/shared/meeting-performance";
 import { normalizeBulletPoints } from "~/store/zustand/ai-task/shared/transform_impl";
 import { withEarlyValidationRetry } from "~/store/zustand/ai-task/shared/validate";
 import { assertCanonicalTemplateSections } from "~/templates/codec";
@@ -33,7 +34,10 @@ export const enhanceWorkflow: Pick<
   executeWorkflow,
   transforms: [
     normalizeBulletPoints(),
-    smoothStream({ delayInMs: 250, chunking: "line" }),
+    smoothStream({
+      delayInMs: meetingPerformanceEnabled ? null : 250,
+      chunking: "line",
+    }),
   ],
 };
 

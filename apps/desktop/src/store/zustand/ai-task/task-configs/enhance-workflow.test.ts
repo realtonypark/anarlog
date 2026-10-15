@@ -1,7 +1,8 @@
 import type { LanguageModel } from "ai";
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import type { TaskArgsMapTransformed } from ".";
+import { applyTransforms } from "../shared/transform_infra";
 import { enhanceWorkflow } from "./enhance-workflow";
 
 import { formatSummaryDetailGuidance } from "~/services/enhancer/summary-length";
@@ -137,3 +138,47 @@ it("adds length guidance to prompts rendered from a template with sections", asy
   expect(request.prompt).not.toMatch(/\d to \d sections/);
   expect(request.maxOutputTokens).toBe(64_000);
 });
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+});
+
+it.each([
+  { rollback: undefined, elapsed: 0 },
+  { rollback: "true", elapsed: 500 },
+])(
+  "preserves normalized summary bytes without a streaming backlog (rollback=$rollback)",
+  async ({ rollback, elapsed }) => {
+    vi.useFakeTimers();
+    vi.stubEnv("VITE_DISABLE_MEETING_PERF_OPTIMIZATIONS", rollback);
+    vi.resetModules();
+    const { enhanceWorkflow: workflow } = await import("./enhance-workflow");
+    const stream = (async function* () {
+      yield { type: "text-start" as const, id: "summary" };
+      yield {
+        type: "text-delta" as const,
+        id: "summary",
+        text: "• First\n• Sec",
+      };
+      yield { type: "text-delta" as const, id: "summary", text: "ond\n- Tail" };
+      yield { type: "text-end" as const, id: "summary" };
+    })();
+    const startedAt = Date.now();
+    const completion = (async () => {
+      let text = "";
+      for await (const chunk of applyTransforms(
+        stream,
+        workflow.transforms ?? [],
+      )) {
+        if (chunk.type === "text-delta") text += chunk.text;
+      }
+      return { text, elapsed: Date.now() - startedAt };
+    })();
+    await vi.runAllTimersAsync();
+    expect(await completion).toEqual({
+      text: "- First\n- Second\n- Tail",
+      elapsed,
+    });
+  },
+);
