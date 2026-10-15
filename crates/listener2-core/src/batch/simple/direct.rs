@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use futures_util::future::try_join_all;
 use owhisper_client::{
     AdapterKind, AnarlogAdapter, AquaVoiceAdapter, ArgmaxAdapter, AssemblyAIAdapter,
     AwsTranscribeAdapter, AzureSpeechAdapter, BatchSttAdapter, BatchUploadLimit, CartesiaAdapter,
@@ -227,36 +228,64 @@ pub(super) async fn run_direct_batch<A: BatchSttAdapter>(
 
     match segment_plan(&params.file_path, audio_duration, limit) {
         Some(segment_duration) => {
-            run_segmented_batch::<A>(provider, params, listen_params, segment_duration, timeout)
-                .await
+            // Temporary opt-in until provider measurements validate concurrent uploads.
+            let concurrency = if std::env::var_os("ANARLOG_BATCH_SEGMENT_CONCURRENCY")
+                .is_some_and(|value| value == "2")
+            {
+                2
+            } else {
+                1
+            };
+            run_segmented_batch::<A>(
+                provider,
+                params,
+                listen_params,
+                segment_duration,
+                timeout,
+                concurrency,
+            )
+            .await
         }
         None => run_direct_batch_with_timeout::<A>(provider, params, listen_params, timeout).await,
     }
 }
 
-async fn run_segmented_batch<A: BatchSttAdapter>(
+pub(super) async fn run_segmented_batch<A: BatchSttAdapter>(
     provider: &str,
     params: BatchParams,
     mut listen_params: owhisper_interface::ListenParams,
     segment_duration: Duration,
     timeout: Duration,
+    concurrency: usize,
 ) -> crate::Result<BatchRunOutput> {
     let segments = split_batch_upload(&params.file_path, segment_duration, provider).await?;
     listen_params.channels = 1;
 
+    tracing::info!(
+        provider,
+        concurrency,
+        segments = segments.paths().len(),
+        "batch_segment_upload_scheduling"
+    );
     let mut responses = Vec::with_capacity(segments.paths().len());
-    for path in segments.paths() {
-        let mut segment_params = params.clone();
-        segment_params.file_path = path.to_string_lossy().into_owned();
-
-        let output = run_direct_batch_with_timeout::<A>(
-            provider,
-            segment_params,
-            listen_params.clone(),
-            timeout,
-        )
+    for paths in segments.paths().chunks(concurrency) {
+        let wave = try_join_all(paths.iter().map(|path| {
+            let mut segment_params = params.clone();
+            segment_params.file_path = path.to_string_lossy().into_owned();
+            let listen_params = listen_params.clone();
+            async move {
+                let output = run_direct_batch_with_timeout::<A>(
+                    provider,
+                    segment_params,
+                    listen_params,
+                    timeout,
+                )
+                .await?;
+                Ok::<_, crate::Error>(output.response)
+            }
+        }))
         .await?;
-        responses.push(output.response);
+        responses.extend(wave);
     }
 
     Ok(BatchRunOutput {

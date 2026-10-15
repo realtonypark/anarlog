@@ -900,3 +900,235 @@ fn collect_soniqo_channel_transcripts_errors_when_all_channels_fail() {
 
     assert_eq!(error, "Soniqo failed to transcribe all 2 audio channel(s).");
 }
+
+struct ConcurrentSegmentLab {
+    active: std::sync::atomic::AtomicUsize,
+    peak: std::sync::atomic::AtomicUsize,
+    uploads: std::sync::Mutex<Vec<std::path::PathBuf>>,
+    completed: std::sync::Mutex<Vec<usize>>,
+    cancelled: std::sync::atomic::AtomicUsize,
+    fail: bool,
+    late_failure: bool,
+    timeout: bool,
+}
+
+static CONCURRENT_SEGMENT_LAB: std::sync::Mutex<Option<Arc<ConcurrentSegmentLab>>> =
+    std::sync::Mutex::new(None);
+
+struct SegmentLabGuard {
+    state: Arc<ConcurrentSegmentLab>,
+    finished: bool,
+}
+
+impl Drop for SegmentLabGuard {
+    fn drop(&mut self) {
+        use std::sync::atomic::Ordering::SeqCst;
+        self.state.active.fetch_sub(1, SeqCst);
+        if !self.finished {
+            self.state.cancelled.fetch_add(1, SeqCst);
+        }
+    }
+}
+
+#[derive(Clone, Default)]
+struct ConcurrentSegmentAdapter;
+
+impl BatchSttAdapter for ConcurrentSegmentAdapter {
+    fn provider_name(&self) -> &'static str {
+        "segment-lab"
+    }
+    fn is_supported_languages(&self, _: &[anlg_language::Language], _: Option<&str>) -> bool {
+        true
+    }
+    fn transcribe_file<'a, P: AsRef<Path> + Send + 'a>(
+        &'a self,
+        _: &'a reqwest_middleware::ClientWithMiddleware,
+        _: &'a str,
+        _: &'a str,
+        params: &'a owhisper_interface::ListenParams,
+        file_path: P,
+    ) -> Pin<
+        Box<dyn Future<Output = std::result::Result<Response, owhisper_client::Error>> + Send + 'a>,
+    > {
+        let path = file_path.as_ref().to_path_buf();
+        let state = CONCURRENT_SEGMENT_LAB
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .clone();
+        Box::pin(async move {
+            use std::sync::atomic::Ordering::SeqCst;
+            assert_eq!(params.channels, 1);
+            assert_eq!(params.model.as_deref(), Some("unchanged-model"));
+            let index: usize = path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .strip_prefix("segment-")
+                .unwrap()
+                .parse()
+                .unwrap();
+            state.uploads.lock().unwrap().push(path);
+            let active = state.active.fetch_add(1, SeqCst) + 1;
+            state.peak.fetch_max(active, SeqCst);
+            let mut guard = SegmentLabGuard {
+                state: state.clone(),
+                finished: false,
+            };
+            tokio::time::sleep(if state.timeout {
+                Duration::from_secs(60)
+            } else {
+                Duration::from_millis(if state.late_failure {
+                    [80, 10, 10, 10][index]
+                } else if state.fail {
+                    [10, 80, 60, 20][index]
+                } else {
+                    [80, 10, 60, 20][index]
+                })
+            })
+            .await;
+            guard.finished = true;
+            if state.fail && index == 0 {
+                return Err(owhisper_client::Error::UnexpectedStatus {
+                    status: reqwest_middleware::reqwest::StatusCode::BAD_REQUEST,
+                    body: "synthetic failure".to_owned(),
+                });
+            }
+            state.completed.lock().unwrap().push(index);
+            Ok(Response {
+                metadata: serde_json::json!({ "speaker_labels": [format!("speaker-{index}")], "speaker_segments": [{"speaker": index, "start": 0.25, "end": 0.75}] }),
+                results: owhisper_interface::batch::Results {
+                    channels: vec![owhisper_interface::batch::Channel {
+                        alternatives: vec![owhisper_interface::batch::Alternatives {
+                            transcript: format!("segment {index}"),
+                            confidence: 1.0,
+                            words: vec![owhisper_interface::batch::Word {
+                                word: format!("segment{index}"),
+                                start: 0.25,
+                                end: 0.75,
+                                confidence: 1.0,
+                                channel: 0,
+                                speaker: Some(0),
+                                punctuated_word: None,
+                            }],
+                        }],
+                    }],
+                },
+            })
+        })
+    }
+}
+
+#[tokio::test]
+async fn concurrent_segments_keep_order_offsets_and_cleanup_on_error_or_cancellation() {
+    use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+    let source = tempfile::Builder::new().suffix(".wav").tempfile().unwrap();
+    write_test_wav_samples(source.path(), TARGET_SAMPLE_RATE as usize * 4);
+    for concurrency in [1, 2, 4] {
+        for mode in ["success", "failure", "late_failure", "timeout", "cancel"] {
+            let state = Arc::new(ConcurrentSegmentLab {
+                active: AtomicUsize::new(0),
+                peak: AtomicUsize::new(0),
+                uploads: Default::default(),
+                completed: Default::default(),
+                cancelled: AtomicUsize::new(0),
+                fail: mode == "failure" || mode == "late_failure",
+                late_failure: mode == "late_failure",
+                timeout: mode == "timeout",
+            });
+            *CONCURRENT_SEGMENT_LAB.lock().unwrap() = Some(state.clone());
+            let params = BatchParams {
+                session_id: "segment-lab".into(),
+                provider: super::super::BatchProvider::OpenRouter,
+                file_path: source.path().to_string_lossy().into_owned(),
+                model: Some("unchanged-model".into()),
+                base_url: "https://synthetic.invalid".into(),
+                api_key: "synthetic".into(),
+                languages: vec![],
+                keywords: vec![],
+                num_speakers: None,
+                min_speakers: None,
+                max_speakers: None,
+                known_speakers: vec![],
+            };
+            let request = tokio::spawn(super::direct::run_segmented_batch::<
+                ConcurrentSegmentAdapter,
+            >(
+                "segment-lab",
+                params,
+                owhisper_interface::ListenParams {
+                    model: Some("unchanged-model".into()),
+                    channels: 2,
+                    ..Default::default()
+                },
+                Duration::from_secs(1),
+                if mode == "timeout" {
+                    Duration::from_millis(100)
+                } else {
+                    Duration::from_secs(5)
+                },
+                concurrency,
+            ));
+            if mode == "cancel" {
+                tokio::time::timeout(Duration::from_secs(5), async {
+                    while state.active.load(SeqCst) < concurrency {
+                        tokio::task::yield_now().await;
+                    }
+                })
+                .await
+                .unwrap();
+                request.abort();
+                assert!(request.await.unwrap_err().is_cancelled());
+                assert_eq!(state.cancelled.load(SeqCst), concurrency);
+            } else {
+                let result = request.await.unwrap();
+                if mode == "timeout" {
+                    assert!(matches!(
+                        result,
+                        Err(crate::Error::BatchFailed(
+                            crate::BatchFailure::DirectRequestTimedOut { .. }
+                        ))
+                    ));
+                    assert_eq!(state.cancelled.load(SeqCst), concurrency);
+                } else if mode == "failure" || mode == "late_failure" {
+                    assert!(result.is_err());
+                    assert_eq!(state.uploads.lock().unwrap().len(), concurrency);
+                    if mode == "failure" && concurrency > 1 {
+                        assert!(state.cancelled.load(SeqCst) > 0);
+                    }
+                } else {
+                    let output = result.unwrap();
+                    let alternative = &output.response.results.channels[0].alternatives[0];
+                    assert_eq!(
+                        alternative.transcript,
+                        "segment 0 segment 1 segment 2 segment 3"
+                    );
+                    for (index, word) in alternative.words.iter().enumerate() {
+                        assert_eq!(word.start, index as f64 + 0.25);
+                        assert_eq!(word.speaker, Some(index));
+                        assert_eq!(
+                            output.response.metadata["speaker_segments"][index]["start"],
+                            index as f64 + 0.25
+                        );
+                    }
+                    if concurrency > 1 {
+                        assert_ne!(*state.completed.lock().unwrap(), vec![0, 1, 2, 3]);
+                    }
+                }
+            }
+            assert_eq!(state.active.load(SeqCst), 0);
+            assert_eq!(state.peak.load(SeqCst), concurrency);
+            assert!(
+                state
+                    .uploads
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .all(|path| !path.exists() && !path.parent().unwrap().exists())
+            );
+            assert!(source.path().exists());
+        }
+    }
+}
