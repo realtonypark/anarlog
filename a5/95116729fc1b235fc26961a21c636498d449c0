@@ -1,0 +1,34 @@
+Cargo.lock
+  h_05e5164a29872e 17975-17976,17978,17982,18012
+crates/openrouter/src/types/request.rs
+  h_05e5164a29872e 85-86
+crates/template-app/Cargo.toml
+  h_05e5164a29872e 15,18-20,26-30
+crates/template-app/tests/meeting_bench/main.rs
+  h_05e5164a29872e 1-1052
+crates/template-app/tests/meeting_bench/report.rs
+  h_05e5164a29872e 1-1265
+crates/template-eval/Cargo.toml
+  h_05e5164a29872e 11,14
+crates/template-eval/src/eval/mod.rs
+  h_05e5164a29872e 6,13-16
+crates/template-eval/src/eval/systemone.rs
+  h_05e5164a29872e 1-344
+plugins/transcription/Cargo.toml
+  h_05e5164a29872e 55
+plugins/transcription/src/bin/export_bench_corpus.rs
+  h_05e5164a29872e 1-193
+plugins/transcription/src/lib.rs
+  h_05e5164a29872e 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a595116729fc1b235fc26961a21c636498d449c0",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
