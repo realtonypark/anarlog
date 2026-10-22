@@ -12,10 +12,19 @@ specta = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+anlg-openrouter = { workspace = true }
 anlg-template-eval = { workspace = true }
 insta = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync", "time"] }
 
 [[test]]
 name = "llm_eval"
 path = "tests/llm_eval/main.rs"
+harness = false
+
+[[test]]
+name = "meeting_bench"
+path = "tests/meeting_bench/main.rs"
 harness = false
