@@ -52,7 +52,7 @@ ractor = { workspace = true, features = ["async-trait"] }
 
 serde = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["rt"] }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
 

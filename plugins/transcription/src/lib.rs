@@ -16,7 +16,7 @@ mod error;
 mod listener;
 mod listener2;
 mod live_journal;
-mod session_transcript;
+pub mod session_transcript;
 mod stopped_captures;
 mod voiceprint;
 

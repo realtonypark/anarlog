@@ -17972,10 +17972,14 @@ dependencies = [
  "askama-utils",
  "insta",
  "minijinja",
+ "openrouter",
+ "reqwest 0.13.2",
  "serde",
+ "serde_json",
  "specta",
  "template-eval",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]
@@ -18005,6 +18009,7 @@ dependencies = [
  "libtest-mimic",
  "markdown",
  "openrouter",
+ "reqwest 0.13.2",
  "serde",
  "serde_json",
  "tokio",
