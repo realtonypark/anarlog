@@ -1,0 +1,21 @@
+apps/desktop/src/session/components/note-input/raw.test.tsx
+  s_e3106687d5fe6a::t_b83c2a41a731fb 33,162,244,314-316,361
+apps/desktop/src/session/components/note-input/raw.tsx
+  s_e3106687d5fe6a::t_86ba7aaaae93d8 346-347
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d785c1f1f0f4261699b5bceff712fda7ee1a2944",
+  "prompts": {},
+  "sessions": {
+    "s_e3106687d5fe6a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a16705-ced4-7012-b9f1-8f37fb05665f",
+        "model": "autorouter"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
