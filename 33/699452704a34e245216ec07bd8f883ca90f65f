@@ -1,0 +1,16 @@
+apps/desktop/src/session/components/outer-header/overflow/index.test.tsx
+  h_05e5164a29872e 493-502
+apps/desktop/src/session/components/outer-header/overflow/index.tsx
+  h_05e5164a29872e 115-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "33699452704a34e245216ec07bd8f883ca90f65f",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
