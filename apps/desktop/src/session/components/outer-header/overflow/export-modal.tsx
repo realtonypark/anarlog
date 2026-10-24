@@ -31,13 +31,23 @@ import {
   useSessionParticipants,
 } from "~/session/queries";
 import { getSessionEvent } from "~/session/utils";
-import { getStoredSettingValues } from "~/settings/queries";
+import {
+  getStoredSettingValues,
+  useSetSettingValues,
+  useStoredSettingValues,
+} from "~/settings/queries";
 import { useDurableSharedNote } from "~/shared-notes/cache";
 import { isAppStoreBuild } from "~/shared/app-store";
 import type { EditorView } from "~/store/zustand/tabs/schema";
 import { useSessionTranscriptMetadata } from "~/stt/queries";
 
 type FileFormat = "pdf" | "txt" | "md" | "org";
+
+function parseExportFormat(value: string | undefined): FileFormat {
+  return value === "pdf" || value === "txt" || value === "md" || value === "org"
+    ? value
+    : "pdf";
+}
 
 function markdownToText(content: string): string {
   return content
@@ -78,10 +88,20 @@ export function ExportModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useLingui();
-  const [format, setFormat] = useState<FileFormat>("pdf");
-  const [includeMemo, setIncludeMemo] = useState(false);
-  const [includeSummary, setIncludeSummary] = useState(true);
-  const [includeTranscript, setIncludeTranscript] = useState(false);
+  const { values: storedSettings } = useStoredSettingValues();
+  const persistExportConfig = useSetSettingValues();
+  const [format, setFormat] = useState<FileFormat>(() =>
+    parseExportFormat(storedSettings.export_format),
+  );
+  const [includeMemo, setIncludeMemo] = useState(
+    () => storedSettings.export_include_memo ?? false,
+  );
+  const [includeSummary, setIncludeSummary] = useState(
+    () => storedSettings.export_include_summary ?? true,
+  );
+  const [includeTranscript, setIncludeTranscript] = useState(
+    () => storedSettings.export_include_transcript ?? false,
+  );
 
   const session = useSession(sessionId);
   const sessionTitle = session?.title;
@@ -401,6 +421,12 @@ export function ExportModal({
     },
     onSuccess: (path) => {
       if (!path) return;
+      persistExportConfig({
+        export_format: format,
+        export_include_memo: includeMemo,
+        export_include_summary: includeSummary,
+        export_include_transcript: includeTranscript,
+      });
       void analyticsCommands.event({
         event: "session_exported",
         format,

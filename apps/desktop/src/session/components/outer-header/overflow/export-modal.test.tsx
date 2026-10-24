@@ -10,6 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   settings: vi.fn(),
+  storedValues: {} as Record<string, string | boolean | undefined>,
+  persistSettings: vi.fn(),
   downloadDir: vi.fn(),
   exportPdf: vi.fn(),
   writeTextFile: vi.fn(),
@@ -36,6 +38,11 @@ vi.mock("@anlg/plugin-opener2", () => ({
 }));
 vi.mock("~/settings/queries", () => ({
   getStoredSettingValues: mocks.settings,
+  useStoredSettingValues: () => ({
+    values: mocks.storedValues,
+    hasValues: new Set(),
+  }),
+  useSetSettingValues: () => mocks.persistSettings,
 }));
 vi.mock("~/shared/app-store", () => ({
   isAppStoreBuild: mocks.isAppStoreBuild,
@@ -81,10 +88,11 @@ function renderModal(
   );
 }
 
-describe("ExportModal destination", () => {
+describe("ExportModal", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.settings.mockResolvedValue({ values: {} });
+    mocks.storedValues = {};
     mocks.downloadDir.mockResolvedValue("/Users/test/Downloads");
     mocks.exportPdf.mockResolvedValue({ status: "ok", data: null });
     mocks.writeTextFile.mockResolvedValue({ status: "ok", data: null });
@@ -211,5 +219,77 @@ describe("ExportModal destination", () => {
     expect(mocks.exportPdf).not.toHaveBeenCalled();
     expect(mocks.onOpenChange).not.toHaveBeenCalled();
     expect(mocks.revealItemInDir).not.toHaveBeenCalled();
+  });
+
+  it("opens with the last used format and sections", () => {
+    mocks.storedValues = {
+      export_format: "md",
+      export_include_memo: true,
+      export_include_summary: false,
+      export_include_transcript: true,
+    };
+    renderModal();
+    expect(
+      (screen.getByRole("radio", { name: "Markdown" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: "Memo" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: "Summary" }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+    expect(
+      (screen.getByRole("checkbox", { name: "Transcript" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it("falls back to PDF summary defaults for unknown stored values", () => {
+    mocks.storedValues = { export_format: "docx" };
+    renderModal();
+    expect(
+      (screen.getByRole("radio", { name: "PDF" }) as HTMLInputElement).checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: "Memo" }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+    expect(
+      (screen.getByRole("checkbox", { name: "Summary" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: "Transcript" }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
+  it("persists the used config on successful export", async () => {
+    renderModal();
+    fireEvent.click(screen.getByRole("radio", { name: "TXT" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Memo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    await waitFor(() => expect(mocks.onOpenChange).toHaveBeenCalledWith(false));
+    expect(mocks.persistSettings).toHaveBeenCalledWith({
+      export_format: "txt",
+      export_include_memo: true,
+      export_include_summary: true,
+      export_include_transcript: false,
+    });
+  });
+
+  it("does not persist the config when the export fails", async () => {
+    mocks.writeTextFile.mockResolvedValue({
+      status: "error",
+      error: "Permission denied",
+    });
+    renderModal();
+    fireEvent.click(screen.getByRole("radio", { name: "Markdown" }));
+    fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    await screen.findByRole("alert");
+    expect(mocks.persistSettings).not.toHaveBeenCalled();
   });
 });
