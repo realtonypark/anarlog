@@ -1,0 +1,22 @@
+apps/desktop/src/session/components/outer-header/overflow/export-modal.test.tsx
+  h_05e5164a29872e 13,14,16,43,44,45-46,52,100,104,105,234-235,236-238,239-308
+apps/desktop/src/session/components/outer-header/overflow/export-modal.tsx
+  h_05e5164a29872e 34-36,38,46-51,86-106,112-120,128-129,131,132-133,134,135,136-137,138,139,459-464
+apps/desktop/src/settings/schema.ts
+  h_05e5164a29872e 32-51
+apps/desktop/src/session/components/outer-header/overflow/index.test.tsx
+  h_05e5164a29872e 1-7,22,36,111-125,251,408-427
+apps/desktop/src/session/components/outer-header/overflow/index.tsx
+  h_05e5164a29872e 66,101,254
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a4b232d1844f196e67f8d85f88b8be622e569253",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
