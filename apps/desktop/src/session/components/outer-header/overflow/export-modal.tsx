@@ -35,6 +35,7 @@ import {
   getStoredSettingValues,
   useSetSettingValues,
   useStoredSettingValues,
+  useStoredSettingValuesQuery,
 } from "~/settings/queries";
 import { useDurableSharedNote } from "~/shared-notes/cache";
 import { isAppStoreBuild } from "~/shared/app-store";
@@ -76,17 +77,27 @@ function markdownToOrg(content: string): string {
     .trim();
 }
 
-export function ExportModal({
-  sessionId,
-  currentView,
-  open,
-  onOpenChange,
-}: {
+type ExportModalProps = {
   sessionId: string;
   currentView: EditorView;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}) {
+};
+
+export function ExportModal(props: ExportModalProps) {
+  const settingsQuery = useStoredSettingValuesQuery();
+  if (settingsQuery.isLoading) {
+    return null;
+  }
+  return <ExportModalContent {...props} />;
+}
+
+function ExportModalContent({
+  sessionId,
+  currentView,
+  open,
+  onOpenChange,
+}: ExportModalProps) {
   const { t } = useLingui();
   const { values: storedSettings } = useStoredSettingValues();
   const persistExportConfig = useSetSettingValues();

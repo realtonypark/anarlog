@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   settings: vi.fn(),
   storedValues: {} as Record<string, string | boolean | undefined>,
+  settingsLoading: false,
   persistSettings: vi.fn(),
   downloadDir: vi.fn(),
   exportPdf: vi.fn(),
@@ -41,6 +42,11 @@ vi.mock("~/settings/queries", () => ({
   useStoredSettingValues: () => ({
     values: mocks.storedValues,
     hasValues: new Set(),
+  }),
+  useStoredSettingValuesQuery: () => ({
+    data: { values: mocks.storedValues, hasValues: new Set() },
+    isLoading: mocks.settingsLoading,
+    error: null,
   }),
   useSetSettingValues: () => mocks.persistSettings,
 }));
@@ -76,7 +82,7 @@ function renderModal(
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
-  return render(
+  const renderElement = () => (
     <QueryClientProvider client={client}>
       <ExportModal
         sessionId="session-1"
@@ -84,8 +90,10 @@ function renderModal(
         open
         onOpenChange={mocks.onOpenChange}
       />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  const view = render(renderElement());
+  return { ...view, reload: () => view.rerender(renderElement()) };
 }
 
 describe("ExportModal", () => {
@@ -93,6 +101,7 @@ describe("ExportModal", () => {
     vi.resetAllMocks();
     mocks.settings.mockResolvedValue({ values: {} });
     mocks.storedValues = {};
+    mocks.settingsLoading = false;
     mocks.downloadDir.mockResolvedValue("/Users/test/Downloads");
     mocks.exportPdf.mockResolvedValue({ status: "ok", data: null });
     mocks.writeTextFile.mockResolvedValue({ status: "ok", data: null });
@@ -291,5 +300,27 @@ describe("ExportModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
     await screen.findByRole("alert");
     expect(mocks.persistSettings).not.toHaveBeenCalled();
+  });
+
+  it("waits for settings to load before initializing the form", () => {
+    mocks.settingsLoading = true;
+    mocks.storedValues = {
+      export_format: "md",
+      export_include_memo: true,
+      export_include_summary: false,
+      export_include_transcript: true,
+    };
+    const view = renderModal();
+    expect(screen.queryByRole("button", { name: "Export" })).toBeNull();
+    mocks.settingsLoading = false;
+    view.reload();
+    expect(
+      (screen.getByRole("radio", { name: "Markdown" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("checkbox", { name: "Memo" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
   });
 });
