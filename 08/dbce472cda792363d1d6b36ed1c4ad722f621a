@@ -1,0 +1,16 @@
+apps/desktop/src/session/components/outer-header/overflow/export-modal.test.tsx
+  h_05e5164a29872e 298-346
+apps/desktop/src/session/components/outer-header/overflow/export-modal.tsx
+  h_05e5164a29872e 418-422,429,435-440,445,453,455,466,469-472,476-478,594-596
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "08dbce472cda792363d1d6b36ed1c4ad722f621a",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
