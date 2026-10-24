@@ -34,7 +34,6 @@ import { getSessionEvent } from "~/session/utils";
 import {
   getStoredSettingValues,
   useSetSettingValues,
-  useStoredSettingValues,
   useStoredSettingValuesQuery,
 } from "~/settings/queries";
 import { useDurableSharedNote } from "~/shared-notes/cache";
@@ -84,12 +83,41 @@ type ExportModalProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type ExportConfig = {
+  format: FileFormat;
+  includeMemo: boolean;
+  includeSummary: boolean;
+  includeTranscript: boolean;
+};
+
+function readExportConfig(values: {
+  export_format?: string;
+  export_include_memo?: boolean;
+  export_include_summary?: boolean;
+  export_include_transcript?: boolean;
+}): ExportConfig {
+  return {
+    format: parseExportFormat(values.export_format),
+    includeMemo: values.export_include_memo ?? false,
+    includeSummary: values.export_include_summary ?? true,
+    includeTranscript: values.export_include_transcript ?? false,
+  };
+}
+
 export function ExportModal(props: ExportModalProps) {
   const settingsQuery = useStoredSettingValuesQuery();
   if (settingsQuery.isLoading) {
     return null;
   }
-  return <ExportModalContent {...props} />;
+  // Read here, not in the content: a fresh live-query handle reports empty
+  // on its first render, so the content must receive settled values as props
+  // or its draft state freezes the empty first read.
+  return (
+    <ExportModalContent
+      initialConfig={readExportConfig(settingsQuery.data?.values ?? {})}
+      {...props}
+    />
+  );
 }
 
 function ExportModalContent({
@@ -97,21 +125,17 @@ function ExportModalContent({
   currentView,
   open,
   onOpenChange,
-}: ExportModalProps) {
+  initialConfig,
+}: ExportModalProps & { initialConfig: ExportConfig }) {
   const { t } = useLingui();
-  const { values: storedSettings } = useStoredSettingValues();
   const persistExportConfig = useSetSettingValues();
-  const [format, setFormat] = useState<FileFormat>(() =>
-    parseExportFormat(storedSettings.export_format),
-  );
-  const [includeMemo, setIncludeMemo] = useState(
-    () => storedSettings.export_include_memo ?? false,
-  );
+  const [format, setFormat] = useState<FileFormat>(initialConfig.format);
+  const [includeMemo, setIncludeMemo] = useState(initialConfig.includeMemo);
   const [includeSummary, setIncludeSummary] = useState(
-    () => storedSettings.export_include_summary ?? true,
+    initialConfig.includeSummary,
   );
   const [includeTranscript, setIncludeTranscript] = useState(
-    () => storedSettings.export_include_transcript ?? false,
+    initialConfig.includeTranscript,
   );
 
   const session = useSession(sessionId);

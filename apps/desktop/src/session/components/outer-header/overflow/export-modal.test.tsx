@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   settings: vi.fn(),
   storedValues: {} as Record<string, string | boolean | undefined>,
+  settingsValues: {} as Record<string, string | boolean | undefined>,
   settingsLoading: false,
   persistSettings: vi.fn(),
   downloadDir: vi.fn(),
@@ -40,7 +41,7 @@ vi.mock("@anlg/plugin-opener2", () => ({
 vi.mock("~/settings/queries", () => ({
   getStoredSettingValues: mocks.settings,
   useStoredSettingValues: () => ({
-    values: mocks.storedValues,
+    values: mocks.settingsValues,
     hasValues: new Set(),
   }),
   useStoredSettingValuesQuery: () => ({
@@ -101,6 +102,7 @@ describe("ExportModal", () => {
     vi.resetAllMocks();
     mocks.settings.mockResolvedValue({ values: {} });
     mocks.storedValues = {};
+    mocks.settingsValues = {};
     mocks.settingsLoading = false;
     mocks.downloadDir.mockResolvedValue("/Users/test/Downloads");
     mocks.exportPdf.mockResolvedValue({ status: "ok", data: null });
@@ -231,6 +233,9 @@ describe("ExportModal", () => {
   });
 
   it("opens with the last used format and sections", () => {
+    // settingsValues stays empty: a fresh live-query handle reports empty on
+    // its first render, so the form must initialize from the settled query
+    // values, not from its own handle read.
     mocks.storedValues = {
       export_format: "md",
       export_include_memo: true,
