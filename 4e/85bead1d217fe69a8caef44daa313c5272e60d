@@ -1,0 +1,16 @@
+crates/owhisper-client/src/adapter/mod.rs
+  h_05e5164a29872e 680,684-687
+crates/owhisper-client/src/adapter/tests.rs
+  h_05e5164a29872e 594,601-609
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4e85bead1d217fe69a8caef44daa313c5272e60d",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
