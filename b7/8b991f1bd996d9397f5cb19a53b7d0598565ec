@@ -1,0 +1,68 @@
+crates/owhisper-client/src/adapter/mod.rs
+  h_05e5164a29872e 14,59,515-516,680-684,719,788,836,910
+crates/transcribe-proxy/tests/common/mod.rs
+  h_05e5164a29872e 125
+crates/transcribe-proxy/src/routes/batch/sync.rs
+  h_05e5164a29872e 333
+apps/desktop/src/settings/ai/llm/shared.tsx
+  h_05e5164a29872e 278-283,286-300,718
+  h_05e5164a29872e 284-285
+apps/desktop/src/stt/capabilities.ts
+  h_05e5164a29872e 207
+crates/mobile-bridge/src/transcription.rs
+  h_05e5164a29872e 5-9,179
+crates/transcribe-proxy/src/routes/streaming/anarlog.rs
+  h_05e5164a29872e 100,150,204
+apps/desktop/src/stt/capabilities.test.ts
+  h_05e5164a29872e 130
+crates/listener-core/src/actors/listener/adapters.rs
+  h_05e5164a29872e 227
+apps/desktop/src/settings/ai/stt/shared.tsx
+  h_05e5164a29872e 628-634,637-660,1301
+  h_05e5164a29872e 635-636
+apps/desktop/src/stt/model-selection.ts
+  h_05e5164a29872e 33
+crates/owhisper-client/src/adapter/tests.rs
+  h_05e5164a29872e 275,496-499,594-599
+plugins/transcription/js/bindings.gen.ts
+  h_05e5164a29872e 861
+apps/desktop/src/stt/useRunBatch.test.ts
+  h_05e5164a29872e 204
+crates/owhisper-client/src/lib.rs
+  h_05e5164a29872e 27-29
+apps/desktop/src/settings/ai/shared/list-cheaper-inference.ts
+  h_05e5164a29872e 1-97
+apps/desktop/src/settings/ai/llm/select.test.ts
+  h_05e5164a29872e 96
+crates/listener2-core/src/batch/simple/direct.rs
+  h_05e5164a29872e 7-11,107
+crates/listener2-core/src/lib.rs
+  h_05e5164a29872e 193
+crates/listener2-core/src/batch/mod.rs
+  h_05e5164a29872e 66-68,103
+crates/owhisper-client/src/providers.rs
+  h_05e5164a29872e 74-75,125,133,224,266,297,331,358,389,420,475,506,530,562,586,616,652,685,744,772
+crates/owhisper-client/src/adapter/cheaper_inference.rs
+  h_05e5164a29872e 1-63
+apps/desktop/src/settings/ai/llm/select.tsx
+  h_05e5164a29872e 49,596-598
+apps/desktop/src/settings/ai/shared/list-cheaper-inference.test.ts
+  h_05e5164a29872e 1-42
+apps/desktop/src/stt/useRunBatch.ts
+  h_05e5164a29872e 159
+apps/desktop/public/assets/cheaper-inference-mark.svg
+  h_05e5164a29872e 1-6
+apps/desktop/src/shared/static-assets.manifest.json
+  h_05e5164a29872e 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b78b991f1bd996d9397f5cb19a53b7d0598565ec",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
