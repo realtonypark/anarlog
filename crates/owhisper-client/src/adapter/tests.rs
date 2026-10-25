@@ -591,15 +591,19 @@ fn openai_diarize_batch_limit_stays_under_api_duration_cap() {
 
 #[test]
 fn openai_compatible_providers_keep_shared_duration_cap() {
-    for kind in [
-        AdapterKind::Groq,
-        AdapterKind::CheaperInference,
-        AdapterKind::Together,
-        AdapterKind::Xai,
-    ] {
+    for kind in [AdapterKind::Groq, AdapterKind::Together, AdapterKind::Xai] {
         let limit = kind
             .batch_upload_limit(None)
             .expect("openai-compatible providers have a batch upload limit");
         assert_eq!(limit.max_duration, Duration::from_secs(25 * 60));
     }
+}
+
+#[test]
+fn cheaper_inference_segments_fit_provider_payload_cap() {
+    let limit = AdapterKind::CheaperInference
+        .batch_upload_limit(None)
+        .expect("cheaper_inference has a batch upload limit");
+    assert_eq!(limit.max_bytes, 4 * 1024 * 1024);
+    assert_eq!(limit.max_duration, Duration::from_secs(8 * 60));
 }

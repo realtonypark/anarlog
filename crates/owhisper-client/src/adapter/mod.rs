@@ -677,14 +677,14 @@ impl AdapterKind {
                 OPENAI_COMPATIBLE_MAX_UPLOAD_BYTES,
                 openai_batch_max_duration(model),
             ),
-            Self::Groq
-            | Self::Together
-            | Self::Xai
-            | Self::AmazonBedrock
-            | Self::CheaperInference => (
+            Self::Groq | Self::Together | Self::Xai | Self::AmazonBedrock => (
                 OPENAI_COMPATIBLE_MAX_UPLOAD_BYTES,
                 OPENAI_COMPATIBLE_MAX_DURATION,
             ),
+            // Cheaper Inference rejects request bodies over ~4.5 MB with 413
+            // (FUNCTION_PAYLOAD_TOO_LARGE). Mono 64 kbps MP3 segments run
+            // ~8 KB/s, so 8-minute segments stay near 3.8 MB.
+            Self::CheaperInference => (4 * 1024 * 1024, Duration::from_secs(8 * 60)),
             Self::GoogleGenerativeAi => (20 * 1024 * 1024, Duration::from_secs(15 * 60)),
             Self::Zai => (OPENAI_COMPATIBLE_MAX_UPLOAD_BYTES, Duration::from_secs(25)),
             Self::SiliconFlow => (50 * 1024 * 1024, Duration::from_secs(50 * 60)),
