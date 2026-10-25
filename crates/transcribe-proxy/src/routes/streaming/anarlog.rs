@@ -97,6 +97,7 @@ fn build_upstream_url_with_adapter(
         | Provider::AzureSpeech
         | Provider::GoogleCloud
         | Provider::Groq
+        | Provider::CheaperInference
         | Provider::RevAi
         | Provider::Speechmatics
         | Provider::Together
@@ -146,6 +147,7 @@ fn build_initial_message_with_adapter(
         | Provider::AzureSpeech
         | Provider::GoogleCloud
         | Provider::Groq
+        | Provider::CheaperInference
         | Provider::RevAi
         | Provider::Speechmatics
         | Provider::Together
@@ -199,6 +201,7 @@ fn build_response_transformer(
             | Provider::AzureSpeech
             | Provider::GoogleCloud
             | Provider::Groq
+            | Provider::CheaperInference
             | Provider::RevAi
             | Provider::Speechmatics
             | Provider::Together

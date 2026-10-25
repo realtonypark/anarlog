@@ -330,6 +330,7 @@ pub(super) async fn transcribe_with_provider(
         | Provider::AzureSpeech
         | Provider::GoogleCloud
         | Provider::Groq
+        | Provider::CheaperInference
         | Provider::RevAi
         | Provider::Speechmatics
         | Provider::Together

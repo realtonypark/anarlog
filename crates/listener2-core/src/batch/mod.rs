@@ -63,6 +63,9 @@ pub enum BatchProvider {
     #[strum(serialize = "google_generative_ai")]
     GoogleGenerativeAi,
     Groq,
+    #[serde(rename = "cheaper_inference")]
+    #[strum(serialize = "cheaper_inference")]
+    CheaperInference,
     RevAi,
     Speechmatics,
     Together,
@@ -97,6 +100,7 @@ impl BatchProvider {
             Self::GoogleCloud => Some(AdapterKind::GoogleCloud),
             Self::GoogleGenerativeAi => Some(AdapterKind::GoogleGenerativeAi),
             Self::Groq => Some(AdapterKind::Groq),
+            Self::CheaperInference => Some(AdapterKind::CheaperInference),
             Self::RevAi => Some(AdapterKind::RevAi),
             Self::Speechmatics => Some(AdapterKind::Speechmatics),
             Self::Together => Some(AdapterKind::Together),

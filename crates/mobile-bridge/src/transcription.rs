@@ -2,11 +2,11 @@ use std::{io::Write, path::Path, time::Duration};
 
 use owhisper_client::{
     AdapterKind, AmazonBedrockAdapter, AquaVoiceAdapter, AssemblyAIAdapter, AwsTranscribeAdapter,
-    AzureSpeechAdapter, BatchSttAdapter, CartesiaAdapter, CohereAdapter, DeepgramAdapter,
-    ElevenLabsAdapter, GladiaAdapter, GoogleCloudAdapter, GoogleGenerativeAiAdapter, GroqAdapter,
-    MistralAdapter, OpenAIAdapter, OpenRouterAdapter, PyannoteAdapter, RevAiAdapter,
-    SiliconFlowAdapter, SmallestAIAdapter, SonioxAdapter, SpeechmaticsAdapter, TogetherAdapter,
-    XaiAdapter, ZaiAdapter,
+    AzureSpeechAdapter, BatchSttAdapter, CartesiaAdapter, CheaperInferenceAdapter, CohereAdapter,
+    DeepgramAdapter, ElevenLabsAdapter, GladiaAdapter, GoogleCloudAdapter,
+    GoogleGenerativeAiAdapter, GroqAdapter, MistralAdapter, OpenAIAdapter, OpenRouterAdapter,
+    PyannoteAdapter, RevAiAdapter, SiliconFlowAdapter, SmallestAIAdapter, SonioxAdapter,
+    SpeechmaticsAdapter, TogetherAdapter, XaiAdapter, ZaiAdapter,
 };
 use owhisper_interface::{ListenParams, batch::Response};
 use reqwest_middleware::ClientWithMiddleware;
@@ -176,6 +176,7 @@ async fn dispatch(
         AwsTranscribe => AwsTranscribeAdapter,
         AzureSpeech => AzureSpeechAdapter,
         Cartesia => CartesiaAdapter,
+        CheaperInference => CheaperInferenceAdapter,
         Cohere => CohereAdapter,
         Deepgram => DeepgramAdapter,
         ElevenLabs => ElevenLabsAdapter,

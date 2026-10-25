@@ -85,13 +85,17 @@ pub fn render_speaker_label(
 ) -> String {
     if let Some(ctx) = ctx {
         if let Some(human_id) = key.speaker_human_id.as_ref() {
-            if let Some(name) = ctx.human_name_by_id.get(human_id) {
+            if let Some(name) = ctx
+                .human_name_by_id
+                .get(human_id)
+                .filter(|name| !name.trim().is_empty())
+            {
                 return name.clone();
             }
-            return human_id.clone();
-        }
-
-        if key.channel == ChannelProfile::DirectMic
+            // Assigned but nameless (stale assignments outlive the name):
+            // fall through to unknown-speaker numbering below. A raw
+            // human id is never a good label.
+        } else if key.channel == ChannelProfile::DirectMic
             && let Some(self_human_id) = ctx.self_human_id.as_ref()
         {
             if let Some(name) = ctx.human_name_by_id.get(self_human_id) {
@@ -99,8 +103,6 @@ pub fn render_speaker_label(
             }
             return "You".to_string();
         }
-    } else if let Some(human_id) = key.speaker_human_id.as_ref() {
-        return human_id.clone();
     }
 
     if let Some(labeler) = labeler.as_mut() {
@@ -143,6 +145,31 @@ mod tests {
             render_speaker_label(&direct_mic_key(), Some(&ctx), None),
             "You"
         );
+    }
+
+    #[test]
+    fn numbers_nameless_assigned_humans_instead_of_leaking_ids() {
+        let ctx = SpeakerLabelContext {
+            self_human_id: None,
+            human_name_by_id: HashMap::new(),
+        };
+        let mut labeler = SpeakerLabeler::new();
+        let key = SegmentKey {
+            channel: ChannelProfile::DirectMic,
+            speaker_index: None,
+            speaker_human_id: Some("ghost-human".to_string()),
+        };
+        let other = SegmentKey {
+            speaker_human_id: Some("other-human".to_string()),
+            ..key.clone()
+        };
+        assert_eq!(
+            labeler.label_for(&key, Some(&ctx)),
+            "Speaker 1",
+            "stale assignments to nameless humans must not render raw ids"
+        );
+        assert_eq!(labeler.label_for(&other, Some(&ctx)), "Speaker 2");
+        assert_eq!(labeler.label_for(&key, Some(&ctx)), "Speaker 1");
     }
 
     #[test]

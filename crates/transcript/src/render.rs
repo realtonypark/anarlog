@@ -83,14 +83,15 @@ pub(crate) fn render_transcript_segments_ungrouped(
 
     let base_started_at = earliest_started_at(&transcripts);
     if let Some(mut segments) = preview {
+        let mut preview_labeler = SpeakerLabeler::new();
         for segment in &mut segments {
-            if let Some(id) = &segment.key.speaker_human_id {
+            if let Some(id) = segment.key.speaker_human_id.clone() {
                 // Unnamed humans are not in `humans` (name <> '' filter) — a
-                // raw UUID is never a good label, so fall back the way
-                // `resolve_speaker` does for the local user.
+                // raw UUID is never a good label, so number them like
+                // unknown speakers.
                 segment.speaker_label = humans
                     .iter()
-                    .find(|human| &human.human_id == id)
+                    .find(|human| human.human_id == id)
                     .map(|human| human.name.trim())
                     .filter(|name| !name.is_empty())
                     .map(str::to_owned)
@@ -98,7 +99,8 @@ pub(crate) fn render_transcript_segments_ungrouped(
                         if self_human_id.as_deref() == Some(id.as_str()) {
                             "You".to_string()
                         } else {
-                            id.clone()
+                            let number = preview_labeler.unknown_speaker_number(&segment.key);
+                            format!("Speaker {number}")
                         }
                     });
             }
@@ -358,7 +360,7 @@ fn normalized_rendered_word_text(text: &str, is_first_word: bool) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ChannelProfile, IdentityScope};
+    use crate::{ChannelProfile, IdentityScope, SegmentWord};
 
     fn word(
         id: &str,
@@ -499,6 +501,60 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![Some("remote-1"), Some("remote-2")]
         );
+    }
+
+    #[test]
+    fn stale_assignment_to_nameless_human_renders_speaker_number() {
+        let segments = render_transcript_segments(RenderTranscriptRequest {
+            speaker_context: None,
+            preview: None,
+            transcripts: vec![RenderTranscriptInput {
+                started_at: Some(0),
+                words: vec![word("w1", " hello", 0, 100, 0)],
+                assignments: vec![channel_assignment("ghost-human", ChannelProfile::DirectMic)],
+            }],
+            participant_human_ids: vec![],
+            self_human_id: None,
+            humans: vec![],
+        });
+
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0].speaker_label, "Speaker 1");
+    }
+
+    #[test]
+    fn preview_numbers_nameless_assigned_humans() {
+        let segments = render_transcript_segments(RenderTranscriptRequest {
+            speaker_context: None,
+            preview: Some(vec![RenderedTranscriptSegment {
+                provisional_speaker: None,
+                id: "s1".to_string(),
+                key: SegmentKey {
+                    channel: ChannelProfile::DirectMic,
+                    speaker_index: None,
+                    speaker_human_id: Some("ghost-human".to_string()),
+                },
+                speaker_label: String::new(),
+                start_ms: 0,
+                end_ms: 100,
+                text: "hello".to_string(),
+                words: vec![SegmentWord {
+                    text: "hello".to_string(),
+                    start_ms: 0,
+                    end_ms: 100,
+                    channel: ChannelProfile::DirectMic,
+                    is_final: true,
+                    id: None,
+                }],
+            }]),
+            transcripts: vec![],
+            participant_human_ids: vec![],
+            self_human_id: None,
+            humans: vec![],
+        });
+
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0].speaker_label, "Speaker 1");
     }
 
     #[test]

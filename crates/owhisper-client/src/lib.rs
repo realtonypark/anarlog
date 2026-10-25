@@ -24,9 +24,9 @@ pub use adapter::deepgram::DeepgramModel;
 pub use adapter::{
     AdapterKind, AlebexAdapter, AmazonBedrockAdapter, AnarlogAdapter, AquaVoiceAdapter,
     ArgmaxAdapter, AssemblyAIAdapter, AwsTranscribeAdapter, AzureSpeechAdapter, BatchSttAdapter,
-    BatchUploadLimit, CallbackResult, CallbackSttAdapter, CartesiaAdapter, CohereAdapter,
-    DashScopeAdapter, DashScopeStreamingAdapter, DeepgramAdapter, DeepgramFluxAdapter,
-    ElevenLabsAdapter, FireworksAdapter, GladiaAdapter, GoogleCloudAdapter,
+    BatchUploadLimit, CallbackResult, CallbackSttAdapter, CartesiaAdapter, CheaperInferenceAdapter,
+    CohereAdapter, DashScopeAdapter, DashScopeStreamingAdapter, DeepgramAdapter,
+    DeepgramFluxAdapter, ElevenLabsAdapter, FireworksAdapter, GladiaAdapter, GoogleCloudAdapter,
     GoogleGenerativeAiAdapter, GradiumAdapter, GroqAdapter, InworldAdapter, LanguageQuality,
     LanguageSupport, MetaAdapter, MistralAdapter, ModulateAdapter, NariAdapter, NvidiaAdapter,
     OpenAIAdapter, OpenRouterAdapter, PyannoteAdapter, RealtimeSttAdapter, RevAiAdapter,

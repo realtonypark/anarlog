@@ -272,6 +272,7 @@ fn test_has_live_mode() {
         AdapterKind::AzureSpeech,
         AdapterKind::GoogleCloud,
         AdapterKind::Groq,
+        AdapterKind::CheaperInference,
         AdapterKind::OpenRouter,
         AdapterKind::SiliconFlow,
         AdapterKind::Zai,
@@ -493,6 +494,10 @@ fn test_direct_provider_urls_not_affected() {
         AdapterKind::Groq,
     );
     assert_eq!(
+        AdapterKind::from_url_and_languages("https://api.cheaperinference.com/v1", &en, None,),
+        AdapterKind::CheaperInference,
+    );
+    assert_eq!(
         AdapterKind::from_url_and_languages("https://api.rev.ai/speechtotext/v1", &en, None,),
         AdapterKind::RevAi,
     );
@@ -592,4 +597,13 @@ fn openai_compatible_providers_keep_shared_duration_cap() {
             .expect("openai-compatible providers have a batch upload limit");
         assert_eq!(limit.max_duration, Duration::from_secs(25 * 60));
     }
+}
+
+#[test]
+fn cheaper_inference_segments_fit_provider_payload_cap() {
+    let limit = AdapterKind::CheaperInference
+        .batch_upload_limit(None)
+        .expect("cheaper_inference has a batch upload limit");
+    assert_eq!(limit.max_bytes, 4 * 1024 * 1024);
+    assert_eq!(limit.max_duration, Duration::from_secs(8 * 60));
 }
