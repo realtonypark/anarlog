@@ -1,0 +1,14 @@
+apps/desktop/src/settings/ai/shared/list-cheaper-inference.test.ts
+  h_05e5164a29872e 1,3-12,52-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2efc732cf5a429590fd72ce63338334946671f84",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
