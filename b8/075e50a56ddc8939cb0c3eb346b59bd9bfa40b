@@ -1,0 +1,16 @@
+crates/transcript/src/label.rs
+  h_05e5164a29872e 88-92,95-98,150-174
+crates/transcript/src/render.rs
+  h_05e5164a29872e 86,88,90-91,94,102-103,363,506-559
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b8075e50a56ddc8939cb0c3eb346b59bd9bfa40b",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
