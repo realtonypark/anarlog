@@ -71,6 +71,8 @@ pub enum Provider {
     AquaVoice,
     #[strum(serialize = "cartesia")]
     Cartesia,
+    #[strum(serialize = "cheaper_inference")]
+    CheaperInference,
     #[strum(serialize = "deepgram")]
     Deepgram,
     #[strum(serialize = "assemblyai")]
@@ -120,7 +122,7 @@ pub enum Provider {
 }
 
 impl Provider {
-    const ALL: [Provider; 25] = [
+    const ALL: [Provider; 26] = [
         Self::AquaVoice,
         Self::Cartesia,
         Self::Deepgram,
@@ -128,6 +130,7 @@ impl Provider {
         Self::Soniox,
         Self::Fireworks,
         Self::OpenAI,
+        Self::CheaperInference,
         Self::Gladia,
         Self::ElevenLabs,
         Self::DashScope,
@@ -218,6 +221,7 @@ impl Provider {
             },
             Self::AwsTranscribe
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -259,6 +263,7 @@ impl Provider {
             Self::GoogleCloud => "speech.googleapis.com",
             Self::GoogleGenerativeAi => "generativelanguage.googleapis.com",
             Self::Groq => "api.groq.com",
+            Self::CheaperInference => "api.cheaperinference.com",
             Self::RevAi => "api.rev.ai",
             Self::Speechmatics => "eu1.asr.api.speechmatics.com",
             Self::Together => "api.together.xyz",
@@ -289,6 +294,7 @@ impl Provider {
             Self::GoogleCloud => "speech.googleapis.com",
             Self::GoogleGenerativeAi => "generativelanguage.googleapis.com",
             Self::Groq => "api.groq.com",
+            Self::CheaperInference => "api.cheaperinference.com",
             Self::RevAi => "api.rev.ai",
             Self::Speechmatics => "eu2.rt.speechmatics.com",
             Self::Together => "api.together.xyz",
@@ -322,6 +328,7 @@ impl Provider {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together => "",
@@ -348,6 +355,7 @@ impl Provider {
             | Self::GoogleCloud
             | Self::GoogleGenerativeAi
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -378,6 +386,7 @@ impl Provider {
             Self::GoogleCloud => "https://speech.googleapis.com/v1",
             Self::GoogleGenerativeAi => "https://generativelanguage.googleapis.com/v1beta",
             Self::Groq => "https://api.groq.com/openai/v1",
+            Self::CheaperInference => "https://api.cheaperinference.com/v1",
             Self::RevAi => "https://api.rev.ai/speechtotext/v1",
             Self::Speechmatics => "https://eu1.asr.api.speechmatics.com/v2",
             Self::Together => "https://api.together.xyz/v1",
@@ -408,6 +417,7 @@ impl Provider {
             Self::GoogleCloud => "speech.googleapis.com",
             Self::GoogleGenerativeAi => "generativelanguage.googleapis.com",
             Self::Groq => "groq.com",
+            Self::CheaperInference => "cheaperinference.com",
             Self::RevAi => "rev.ai",
             Self::Speechmatics => "speechmatics.com",
             Self::Together => "together.xyz",
@@ -462,6 +472,7 @@ impl Provider {
             Self::GoogleCloud => "GOOGLE_CLOUD_ACCESS_TOKEN",
             Self::GoogleGenerativeAi => "GEMINI_API_KEY",
             Self::Groq => "GROQ_API_KEY",
+            Self::CheaperInference => "CHEAPER_INFERENCE_API_KEY",
             Self::RevAi => "REVAI_ACCESS_TOKEN",
             Self::Speechmatics => "SPEECHMATICS_API_KEY",
             Self::Together => "TOGETHER_API_KEY",
@@ -492,6 +503,7 @@ impl Provider {
             Self::GoogleCloud => "latest_long",
             Self::GoogleGenerativeAi => "gemini-3.5-transcribe-live",
             Self::Groq => "whisper-large-v3-turbo",
+            Self::CheaperInference => "whisper-large-v3-turbo",
             Self::RevAi => "machine",
             Self::Speechmatics => "enhanced",
             Self::Together => "openai/whisper-large-v3",
@@ -515,6 +527,7 @@ impl Provider {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -546,6 +559,7 @@ impl Provider {
             Self::GoogleCloud => "latest_long",
             Self::GoogleGenerativeAi => "gemini-3.5-transcribe",
             Self::Groq => "whisper-large-v3-turbo",
+            Self::CheaperInference => "whisper-large-v3-turbo",
             Self::RevAi => "machine",
             Self::Speechmatics => "enhanced",
             Self::Together => "openai/whisper-large-v3",
@@ -569,6 +583,7 @@ impl Provider {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -598,6 +613,7 @@ impl Provider {
             | Self::GoogleCloud
             | Self::GoogleGenerativeAi
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -633,6 +649,7 @@ impl Provider {
             | Self::GoogleCloud
             | Self::GoogleGenerativeAi
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -665,6 +682,7 @@ impl Provider {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together
@@ -723,6 +741,7 @@ impl Provider {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together => None,
@@ -750,6 +769,7 @@ impl Provider {
             | Self::GoogleCloud
             | Self::GoogleGenerativeAi
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together

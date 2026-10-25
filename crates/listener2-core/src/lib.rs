@@ -190,6 +190,7 @@ pub fn suggest_providers_for_languages_batch(languages: &[anlg_language::Languag
         AdapterKind::GoogleCloud,
         AdapterKind::GoogleGenerativeAi,
         AdapterKind::Groq,
+        AdapterKind::CheaperInference,
         AdapterKind::RevAi,
         AdapterKind::Speechmatics,
         AdapterKind::Together,

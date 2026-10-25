@@ -858,6 +858,7 @@ export type BatchProvider =
   | "google_cloud"
   | "google_generative_ai"
   | "groq"
+  | "cheaper_inference"
   | "revai"
   | "speechmatics"
   | "together"

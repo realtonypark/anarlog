@@ -122,6 +122,7 @@ pub fn env_with_provider(provider: Provider, api_key: String) -> transcribe_prox
         | Provider::AzureSpeech
         | Provider::GoogleCloud
         | Provider::Groq
+        | Provider::CheaperInference
         | Provider::RevAi
         | Provider::Speechmatics
         | Provider::Together

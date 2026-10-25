@@ -93,6 +93,7 @@ describe("getLlmProviderStatus", () => {
     ["siliconflow", "https://api.siliconflow.com/v1"],
     ["cohere", "https://api.cohere.ai/compatibility/v1"],
     ["groq", "https://api.groq.com/openai/v1"],
+    ["cheaper_inference", "https://api.cheaperinference.com/v1"],
     ["xai", "https://api.x.ai/v1"],
     ["together", "https://api.together.xyz/v1"],
     ["meta", "https://api.meta.ai/v1"],

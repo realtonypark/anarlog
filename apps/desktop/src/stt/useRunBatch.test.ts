@@ -201,6 +201,7 @@ describe("getBatchProvider", () => {
     ["google_cloud", "latest_long", "google_cloud"],
     ["google_generative_ai", "gemini-3.5-transcribe", "google_generative_ai"],
     ["groq", "whisper-large-v3-turbo", "groq"],
+    ["cheaper_inference", "whisper-large-v3-turbo", "cheaper_inference"],
     ["openrouter", "openai/gpt-4o-mini-transcribe", "openrouter"],
     ["siliconflow", "FunAudioLLM/SenseVoiceSmall", "siliconflow"],
     ["zai", "glm-asr-2512", "zai"],

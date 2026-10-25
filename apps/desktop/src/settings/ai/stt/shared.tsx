@@ -627,6 +627,39 @@ const _PROVIDERS = [
   },
   {
     disabled: false,
+    id: "cheaper_inference",
+    displayName: "Cheaper Inference",
+    badge: "After recording",
+    icon: (
+      <ProviderBrandImage
+        src="/assets/cheaper-inference-mark.svg"
+        alt="Cheaper Inference"
+      />
+    ),
+    baseUrl: "https://api.cheaperinference.com/v1",
+    models: [
+      "whisper-large-v3-turbo",
+      "whisper-1",
+      "gpt-4o-mini-transcribe",
+      "gpt-4o-transcribe",
+      "gemini-3.5-transcribe",
+      "qwen3-asr-1.7b",
+      "mai-transcribe-2",
+    ],
+    requirements: [{ kind: "requires_config", fields: ["api_key"] }],
+    links: {
+      models: {
+        label: "Available models",
+        url: "https://www.cheaperinference.com/#models",
+      },
+      setup: {
+        label: "API setup",
+        url: "https://www.cheaperinference.com/docs#quick-start",
+      },
+    },
+  },
+  {
+    disabled: false,
     id: "xai",
     displayName: "xAI",
     badge: null,
@@ -1265,6 +1298,7 @@ const PROVIDER_ORDER = [
   "meta",
   "speechmatics",
   "groq",
+  "cheaper_inference",
   "mistral",
   "revai",
   "gladia",
