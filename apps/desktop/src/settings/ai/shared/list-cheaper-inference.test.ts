@@ -1,6 +1,15 @@
-import { describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { processCheaperInferenceModels } from "./list-cheaper-inference";
+import {
+  listCheaperInferenceModels,
+  processCheaperInferenceModels,
+} from "./list-cheaper-inference";
+
+import { providerFetch } from "~/ai/provider-fetch";
+
+vi.mock("~/ai/provider-fetch", () => ({ providerFetch: vi.fn() }));
+
+beforeEach(() => vi.resetAllMocks());
 
 describe("processCheaperInferenceModels", () => {
   test("keeps chat models and drops media models by endpoint", () => {
@@ -38,5 +47,53 @@ describe("processCheaperInferenceModels", () => {
         "gpt-4": { input_modalities: ["text"] },
       },
     });
+  });
+});
+
+describe("listCheaperInferenceModels", () => {
+  test("fetches the catalog with Bearer auth and keeps chat-capable models", async () => {
+    vi.mocked(providerFetch).mockResolvedValue(
+      Response.json({
+        data: [
+          {
+            id: "gpt-6-luna",
+            supported_endpoints: ["/v1/chat/completions", "/v1/responses"],
+            capabilities: { vision: true },
+          },
+          {
+            id: "whisper-1",
+            supported_endpoints: ["/v1/audio/transcriptions"],
+          },
+        ],
+      }),
+    );
+    const result = await listCheaperInferenceModels(
+      "https://api.cheaperinference.com/v1",
+      "test-key",
+    );
+    expect(providerFetch).toHaveBeenCalledWith(
+      "https://api.cheaperinference.com/v1/models",
+      {
+        method: "GET",
+        headers: { Authorization: "Bearer test-key" },
+      },
+    );
+    expect(result.models).toEqual(["gpt-6-luna"]);
+    expect(result.metadata).toEqual({
+      "gpt-6-luna": { input_modalities: ["text", "image"] },
+      "whisper-1": { input_modalities: ["text"] },
+    });
+  });
+
+  test("returns no models when the catalog request fails", async () => {
+    vi.mocked(providerFetch).mockResolvedValue(
+      new Response("unavailable", { status: 503 }),
+    );
+    expect(
+      await listCheaperInferenceModels(
+        "https://api.cheaperinference.com/v1",
+        "test-key",
+      ),
+    ).toEqual({ models: [], ignored: [], metadata: {} });
   });
 });
