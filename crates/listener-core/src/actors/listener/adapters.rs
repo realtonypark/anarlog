@@ -224,6 +224,7 @@ pub(super) async fn spawn_rx_task(
         AzureSpeech,
         GoogleCloud,
         Groq,
+        CheaperInference,
         OpenRouter,
         SiliconFlow,
         Zai,

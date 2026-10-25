@@ -46,6 +46,7 @@ import { listAnthropicModels } from "~/settings/ai/shared/list-anthropic";
 import { listAppleFoundationModels } from "~/settings/ai/shared/list-apple-foundation";
 import { listAzureAIModels } from "~/settings/ai/shared/list-azure-ai";
 import { listAzureOpenAIModels } from "~/settings/ai/shared/list-azure-openai";
+import { listCheaperInferenceModels } from "~/settings/ai/shared/list-cheaper-inference";
 import { listCloudflareWorkersAIModels } from "~/settings/ai/shared/list-cloudflare-workers-ai";
 import {
   type InputModality,
@@ -591,6 +592,9 @@ export function getLlmProviderStatus({
       break;
     case "openrouter":
       listModelsFunc = () => listOpenRouterModels(baseUrl, apiKey);
+      break;
+    case "cheaper_inference":
+      listModelsFunc = () => listCheaperInferenceModels(baseUrl, apiKey);
       break;
     case "google_generative_ai":
       listModelsFunc = () => listGoogleModels(baseUrl, apiKey);

@@ -204,6 +204,7 @@ export function getSttModelTranscriptionMode(
 
   if (
     provider === "groq" ||
+    provider === "cheaper_inference" ||
     provider === "openrouter" ||
     provider === "siliconflow" ||
     provider === "together" ||

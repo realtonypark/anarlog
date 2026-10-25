@@ -127,6 +127,7 @@ describe("getSttModelTranscriptionMode", () => {
     );
     for (const [provider, model] of [
       ["groq", "whisper-large-v3-turbo"],
+      ["cheaper_inference", "whisper-large-v3-turbo"],
       ["openrouter", "openai/gpt-4o-mini-transcribe"],
       ["together", "openai/whisper-large-v3"],
       ["speechmatics", "enhanced"],

@@ -11,6 +11,7 @@ pub(crate) mod assemblyai;
 mod aws_transcribe;
 mod azure_speech;
 pub(crate) mod cartesia;
+mod cheaper_inference;
 pub(crate) mod cohere;
 mod dashscope;
 pub mod deepgram;
@@ -55,6 +56,7 @@ pub use assemblyai::*;
 pub use aws_transcribe::*;
 pub use azure_speech::*;
 pub use cartesia::*;
+pub use cheaper_inference::*;
 pub use cohere::*;
 pub use dashscope::*;
 pub use deepgram::*;
@@ -510,6 +512,8 @@ pub enum AdapterKind {
     AquaVoice,
     #[strum(serialize = "cartesia")]
     Cartesia,
+    #[strum(serialize = "cheaper_inference")]
+    CheaperInference,
     #[strum(serialize = "argmax")]
     Argmax,
     #[strum(serialize = "soniox")]
@@ -673,7 +677,11 @@ impl AdapterKind {
                 OPENAI_COMPATIBLE_MAX_UPLOAD_BYTES,
                 openai_batch_max_duration(model),
             ),
-            Self::Groq | Self::Together | Self::Xai | Self::AmazonBedrock => (
+            Self::Groq
+            | Self::Together
+            | Self::Xai
+            | Self::AmazonBedrock
+            | Self::CheaperInference => (
                 OPENAI_COMPATIBLE_MAX_UPLOAD_BYTES,
                 OPENAI_COMPATIBLE_MAX_DURATION,
             ),
@@ -708,6 +716,7 @@ impl AdapterKind {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::OpenRouter
             | Self::SiliconFlow
             | Self::Zai
@@ -776,6 +785,7 @@ impl AdapterKind {
             | Self::AzureSpeech
             | Self::GoogleCloud
             | Self::Groq
+            | Self::CheaperInference
             | Self::RevAi
             | Self::Speechmatics
             | Self::Together => LanguageSupport::NotSupported,
@@ -823,6 +833,7 @@ impl AdapterKind {
             Self::AzureSpeech => AzureSpeechAdapter::language_support_batch(languages),
             Self::GoogleCloud => GoogleCloudAdapter::language_support_batch(languages),
             Self::Groq => GroqAdapter::language_support_batch(languages),
+            Self::CheaperInference => CheaperInferenceAdapter::language_support_batch(languages),
             Self::RevAi => RevAiAdapter::language_support_batch(languages),
             Self::Speechmatics => SpeechmaticsAdapter::language_support_batch(languages),
             Self::Together => TogetherAdapter::language_support_batch(languages),
@@ -896,6 +907,7 @@ impl From<crate::providers::Provider> for AdapterKind {
             Provider::GoogleCloud => Self::GoogleCloud,
             Provider::GoogleGenerativeAi => Self::GoogleGenerativeAi,
             Provider::Groq => Self::Groq,
+            Provider::CheaperInference => Self::CheaperInference,
             Provider::RevAi => Self::RevAi,
             Provider::Speechmatics => Self::Speechmatics,
             Provider::Together => Self::Together,

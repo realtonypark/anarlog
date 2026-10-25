@@ -30,6 +30,7 @@ const DEFAULT_EXTERNAL_STT_MODELS: Record<string, string> = {
   siliconflow: "FunAudioLLM/SenseVoiceSmall",
   fireworks: "whisper-v3-turbo",
   groq: "whisper-large-v3-turbo",
+  cheaper_inference: "whisper-large-v3-turbo",
   xai: "xai-stt",
   smallestai: "pulse",
   inworld: "inworld/inworld-stt-1",

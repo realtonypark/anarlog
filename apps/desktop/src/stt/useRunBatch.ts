@@ -156,6 +156,7 @@ const DIRECT_BATCH_PROVIDERS: Set<TranscriptionParams["provider"]> = new Set([
   "google_cloud",
   "google_generative_ai",
   "groq",
+  "cheaper_inference",
   "revai",
   "speechmatics",
   "together",
