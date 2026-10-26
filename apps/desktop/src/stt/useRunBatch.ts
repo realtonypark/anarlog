@@ -324,11 +324,16 @@ async function getUserFallbackTarget({
   const stored = await getStoredAiProvider("stt", providerId).catch(
     () => undefined,
   );
-  const connection = resolveByokSttConnection({
-    providerId,
-    model,
-    providerConfig: stored,
-  });
+  let connection;
+  try {
+    connection = resolveByokSttConnection({
+      providerId,
+      model,
+      providerConfig: stored,
+    });
+  } catch {
+    return null;
+  }
   if (!connection) {
     return null;
   }
