@@ -2,12 +2,6 @@ import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@anlg/ui/components/ui/accordion";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -17,6 +11,8 @@ import {
 import { cn } from "@anlg/utils";
 
 import { ProviderIconSlot } from "./index";
+
+import { SettingRow } from "~/settings/setting-row";
 
 export const FALLBACK_NONE_VALUE = "none";
 
@@ -29,13 +25,15 @@ export type FallbackProviderOption = {
   note?: ReactNode;
 };
 
-export function AdvancedFallbackSection({
+export function FallbackRow({
+  title,
   description,
   providerValue,
   providerOptions,
   onProviderChange,
   modelPicker,
 }: {
+  title: ReactNode;
   description: ReactNode;
   providerValue: string;
   providerOptions: FallbackProviderOption[];
@@ -43,56 +41,54 @@ export function AdvancedFallbackSection({
   modelPicker: ReactNode;
 }) {
   return (
-    <Accordion type="single" collapsible className="flex flex-col">
-      <AccordionItem value="advanced" className="border-none">
-        <AccordionTrigger className="text-md font-sans font-semibold hover:no-underline">
-          <Trans>Advanced</Trans>
-        </AccordionTrigger>
-        <AccordionContent className="flex flex-col gap-3">
-          <p className="text-muted-foreground text-sm">{description}</p>
-          <div className="flex flex-row items-center gap-4">
-            <div className="min-w-0 flex-2">
-              <Select value={providerValue} onValueChange={onProviderChange}>
-                <SelectTrigger className="bg-card shadow-none">
-                  <SelectValue placeholder={<Trans>Select a provider</Trans>} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={FALLBACK_NONE_VALUE}>
-                    <Trans>None</Trans>
-                  </SelectItem>
-                  {providerOptions.map((provider) => (
-                    <SelectItem
-                      key={provider.id}
-                      value={provider.id}
-                      disabled={provider.disabled}
-                      className={cn([
-                        "data-disabled:text-muted-foreground data-disabled:!opacity-100",
-                        provider.unconfigured &&
-                          !provider.disabled &&
-                          "text-muted-foreground",
-                      ])}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <ProviderIconSlot>{provider.icon}</ProviderIconSlot>
-                          <span>{provider.displayName}</span>
-                        </div>
-                        {provider.note ? (
-                          <span className="text-muted-foreground text-[11px]">
-                            {provider.note}
-                          </span>
-                        ) : null}
+    <SettingRow title={title} description={description} controlWidth="content">
+      {(labelProps) => (
+        <div
+          role="group"
+          aria-labelledby={labelProps["aria-labelledby"]}
+          aria-describedby={labelProps["aria-describedby"]}
+          className="flex w-[26rem] max-w-full items-center gap-2"
+        >
+          <div className="min-w-0 flex-1">
+            <Select value={providerValue} onValueChange={onProviderChange}>
+              <SelectTrigger className="bg-card shadow-none">
+                <SelectValue placeholder={<Trans>Select a provider</Trans>} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FALLBACK_NONE_VALUE}>
+                  <Trans>None</Trans>
+                </SelectItem>
+                {providerOptions.map((provider) => (
+                  <SelectItem
+                    key={provider.id}
+                    value={provider.id}
+                    disabled={provider.disabled}
+                    className={cn([
+                      "data-disabled:text-muted-foreground data-disabled:!opacity-100",
+                      provider.unconfigured &&
+                        !provider.disabled &&
+                        "text-muted-foreground",
+                    ])}
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2">
+                        <ProviderIconSlot>{provider.icon}</ProviderIconSlot>
+                        <span>{provider.displayName}</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <span className="text-muted-foreground">/</span>
-            <div className="min-w-0 flex-3">{modelPicker}</div>
+                      {provider.note ? (
+                        <span className="text-muted-foreground text-[11px]">
+                          {provider.note}
+                        </span>
+                      ) : null}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          <div className="min-w-0 flex-[1.5]">{modelPicker}</div>
+        </div>
+      )}
+    </SettingRow>
   );
 }

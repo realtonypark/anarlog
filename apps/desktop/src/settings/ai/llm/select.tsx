@@ -43,8 +43,8 @@ import {
   requiresEntitlement,
 } from "~/settings/ai/shared/eligibility";
 import {
-  AdvancedFallbackSection,
   FALLBACK_NONE_VALUE,
+  FallbackRow,
 } from "~/settings/ai/shared/fallback-section";
 import { listAnthropicModels } from "~/settings/ai/shared/list-anthropic";
 import { listAppleFoundationModels } from "~/settings/ai/shared/list-apple-foundation";
@@ -583,7 +583,8 @@ export function SelectProviderAndModel() {
         </SettingRow>
       ) : null}
 
-      <AdvancedFallbackSection
+      <FallbackRow
+        title={<Trans>Fallback</Trans>}
         description={
           <Trans>
             If your provider fails, requests automatically continue on the

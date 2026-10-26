@@ -490,7 +490,6 @@ msgstr "Дополнителни говорни јазици"
 msgid "Admin"
 msgstr ""
 
-#: src/settings/ai/shared/fallback-section.tsx
 #: src/settings/ai/shared/index.tsx
 #: src/sidebar/settings-nav-groups.ts
 msgid "Advanced"
@@ -2582,6 +2581,11 @@ msgstr ""
 
 #: src/task/resource-view.tsx
 msgid "Failed to load pull request"
+msgstr ""
+
+#: src/settings/ai/llm/select.tsx
+#: src/settings/ai/stt/select.tsx
+msgid "Fallback"
 msgstr ""
 
 #: src/settings/stats/badge-collection.tsx

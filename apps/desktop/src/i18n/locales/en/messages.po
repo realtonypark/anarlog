@@ -490,7 +490,6 @@ msgstr "Additional spoken languages"
 msgid "Admin"
 msgstr "Admin"
 
-#: src/settings/ai/shared/fallback-section.tsx
 #: src/settings/ai/shared/index.tsx
 #: src/sidebar/settings-nav-groups.ts
 msgid "Advanced"
@@ -2583,6 +2582,11 @@ msgstr "Failed to load Outlook Calendar"
 #: src/task/resource-view.tsx
 msgid "Failed to load pull request"
 msgstr "Failed to load pull request"
+
+#: src/settings/ai/llm/select.tsx
+#: src/settings/ai/stt/select.tsx
+msgid "Fallback"
+msgstr "Fallback"
 
 #: src/settings/stats/badge-collection.tsx
 msgid "Familiar Face"

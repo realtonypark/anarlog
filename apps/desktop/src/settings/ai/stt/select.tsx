@@ -73,8 +73,8 @@ import {
   requiresEntitlement,
 } from "~/settings/ai/shared/eligibility";
 import {
-  AdvancedFallbackSection,
   FALLBACK_NONE_VALUE,
+  FallbackRow,
 } from "~/settings/ai/shared/fallback-section";
 import { PersistAiSelection } from "~/settings/ai/shared/persist-selection";
 import {
@@ -486,7 +486,8 @@ export function SelectProviderAndModel() {
         )}
       </div>
 
-      <AdvancedFallbackSection
+      <FallbackRow
+        title={<Trans>Fallback</Trans>}
         description={
           <Trans>
             If batch transcription fails on your provider, it automatically
