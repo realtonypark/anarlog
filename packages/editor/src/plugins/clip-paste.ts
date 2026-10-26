@@ -131,24 +131,6 @@ export function parseYouTubeEmbedSnippet(
   return src ? parseYouTubeUrl(src) : null;
 }
 
-export async function resolveYouTubeClipUrl(
-  clipId: string,
-): Promise<{ embedUrl: string } | null> {
-  try {
-    const res = await fetch(`https://www.youtube.com/clip/${clipId}`);
-    const html = await res.text();
-
-    const videoIdMatch = html.match(/"videoId":"([a-zA-Z0-9_-]+)"/);
-    if (!videoIdMatch) return null;
-
-    return {
-      embedUrl: `https://www.youtube.com/embed/${videoIdMatch[1]}`,
-    };
-  } catch {
-    return null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Node spec
 // ---------------------------------------------------------------------------
@@ -176,7 +158,20 @@ export const clipNodeSpec: NodeSpec = {
     },
   ],
   toDOM(node) {
-    return ["div", { "data-type": "clip", "data-src": node.attrs.src }];
+    const parsed =
+      typeof node.attrs.src === "string"
+        ? parseYouTubeUrl(node.attrs.src)
+        : null;
+    if (!parsed) return ["div", { "data-type": "clip" }];
+    return [
+      "div",
+      { "data-type": "clip", "data-src": parsed.embedUrl },
+      [
+        "a",
+        { href: parsed.embedUrl, rel: "noopener noreferrer nofollow" },
+        parsed.embedUrl,
+      ],
+    ];
   },
 };
 
@@ -204,27 +199,8 @@ export function clipPastePlugin() {
           return true;
         }
 
-        if (!text) return false;
-
-        const clipId = parseYouTubeClipId(text);
-        if (clipId) {
-          resolveYouTubeClipUrl(clipId).then((resolved) => {
-            if (!resolved) return;
-            const node = nodeType.create({ src: resolved.embedUrl });
-            const tr = view.state.tr.replaceSelectionWith(node);
-            view.dispatch(tr);
-          });
-          return true;
-        }
-
-        const parsed = parseYouTubeUrl(text);
-        if (!parsed) return false;
-
-        const { tr } = view.state;
-        const node = nodeType.create({ src: parsed.embedUrl });
-        tr.replaceSelectionWith(node);
-        view.dispatch(tr);
-        return true;
+        // Bare URLs stay editable links; only explicit embed markup becomes a clip.
+        return false;
       },
     },
   });

@@ -14,7 +14,8 @@ use libsqlite3_sys::{
     sqlite3_interrupt, sqlite3_prepare_v2, sqlite3_step, sqlite3_stmt,
 };
 use sqlx::pool::PoolConnection;
-use sqlx::{Sqlite, SqliteConnection};
+use sqlx::{Database, Sqlite, SqliteConnection};
+use sqlx_core::transaction::TransactionManager;
 use tokio::sync::oneshot;
 use tokio::task::{JoinError, JoinHandle};
 
@@ -34,21 +35,82 @@ impl OwnedSqliteConnection for PoolConnection<Sqlite> {
 
 /// Its in-flight `JoinHandle` retains the connection until nested SQLite
 /// registrations around the native call have been torn down.
-pub struct ReservedConnection<C> {
+pub struct ReservedConnection<C: OwnedSqliteConnection> {
     state: ReservedState<C>,
 }
 
-enum ReservedState<C> {
-    Idle(C),
-    InFlight(JoinHandle<(C, OwnerResult)>),
+enum ReservedState<C: OwnedSqliteConnection> {
+    Idle(TransactionOwner<C>),
+    InFlight(JoinHandle<(TransactionOwner<C>, OwnerResult)>),
     Lost,
+}
+
+type SqliteTransactions = <Sqlite as Database>::TransactionManager;
+
+struct TransactionOwner<C: OwnedSqliteConnection> {
+    connection: Option<C>,
+    transaction_open: bool,
+}
+
+impl<C: OwnedSqliteConnection> TransactionOwner<C> {
+    fn start_rollback(&mut self) {
+        if self.transaction_open {
+            SqliteTransactions::start_rollback(self.sqlite_connection());
+            self.transaction_open = false;
+        }
+    }
+}
+
+impl<C: OwnedSqliteConnection> OwnedSqliteConnection for TransactionOwner<C> {
+    fn sqlite_connection(&mut self) -> &mut SqliteConnection {
+        self.connection
+            .as_mut()
+            .expect("reserved connection owner")
+            .sqlite_connection()
+    }
+}
+
+impl<C: OwnedSqliteConnection> Drop for TransactionOwner<C> {
+    fn drop(&mut self) {
+        // The native worker retains this owner after caller cancellation. Queue
+        // rollback only once it has drained, before returning the connection.
+        self.start_rollback();
+    }
 }
 
 impl<C: OwnedSqliteConnection> ReservedConnection<C> {
     pub fn new(connection: C) -> Self {
         Self {
-            state: ReservedState::Idle(connection),
+            state: ReservedState::Idle(TransactionOwner {
+                connection: Some(connection),
+                transaction_open: false,
+            }),
         }
+    }
+
+    pub async fn begin_transaction(&mut self) -> Result<(), Error> {
+        self.settle().await?;
+        let ReservedState::Idle(owner) = &mut self.state else {
+            unreachable!()
+        };
+        assert!(!owner.transaction_open, "reserved transaction already open");
+        owner.transaction_open = true;
+        SqliteTransactions::begin(owner.sqlite_connection(), None).await?;
+        Ok(())
+    }
+
+    pub async fn finish_transaction(&mut self, commit: bool) -> Result<(), Error> {
+        self.settle().await?;
+        let ReservedState::Idle(owner) = &mut self.state else {
+            unreachable!()
+        };
+        if commit {
+            SqliteTransactions::commit(owner.sqlite_connection()).await?;
+        } else {
+            SqliteTransactions::rollback(owner.sqlite_connection()).await?;
+        }
+        owner.transaction_open = false;
+        Ok(())
     }
 
     /// Waits for any native call a cancelled caller left running, then lends
@@ -65,7 +127,10 @@ impl<C: OwnedSqliteConnection> ReservedConnection<C> {
     /// later drops the connection itself.
     pub fn into_inner(self) -> Option<C> {
         match self.state {
-            ReservedState::Idle(connection) => Some(connection),
+            ReservedState::Idle(mut owner) => {
+                owner.start_rollback();
+                owner.connection.take()
+            }
             ReservedState::InFlight(_) | ReservedState::Lost => None,
         }
     }

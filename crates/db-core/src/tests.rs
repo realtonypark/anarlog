@@ -425,6 +425,10 @@ async fn cloudsync_and_change_notifier_share_transaction_lifecycle() {
     .unwrap();
     db.cloudsync_init("test_sync", None, None).await.unwrap();
 
+    let initial_version: i64 = sqlx::query_scalar("SELECT cloudsync_db_version()")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
     let notifier = db.change_notifier();
     let mut changes = notifier.subscribe();
 
@@ -436,7 +440,7 @@ async fn cloudsync_and_change_notifier_share_transaction_lifecycle() {
         .fetch_one(db.pool())
         .await
         .unwrap();
-    assert_eq!(first_version, 1);
+    assert_eq!(first_version, initial_version + 1);
     let first_change = tokio::time::timeout(std::time::Duration::from_secs(1), async {
         loop {
             let change = changes.recv().await.unwrap();
@@ -488,7 +492,7 @@ async fn cloudsync_and_change_notifier_share_transaction_lifecycle() {
         .fetch_one(db.pool())
         .await
         .unwrap();
-    assert_eq!(second_version, 2);
+    assert_eq!(second_version, first_version + 1);
     while changes.try_recv().is_ok() {}
 
     let mut transaction = db.pool().begin().await.unwrap();
@@ -557,7 +561,7 @@ async fn cloudsync_and_change_notifier_share_transaction_lifecycle() {
         .fetch_one(db.pool())
         .await
         .unwrap();
-    assert_eq!(final_version, 3);
+    assert_eq!(final_version, second_version + 1);
     assert_eq!(value, "three");
     assert_eq!(failed_row_count, 0);
 }

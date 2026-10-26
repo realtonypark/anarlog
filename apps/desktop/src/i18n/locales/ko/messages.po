@@ -1946,6 +1946,10 @@ msgstr ""
 msgid "Couldn't save your profile. Try again."
 msgstr ""
 
+#: src/onboarding/account/after-login.tsx
+msgid "Couldn't switch accounts. Please try again."
+msgstr ""
+
 #: src/folders/sidebar.tsx
 #: src/settings/team/index.tsx
 msgid "Create"
@@ -2339,10 +2343,6 @@ msgstr ""
 msgid "Edit date"
 msgstr ""
 
-#: src/onboarding/account/after-login.tsx
-msgid "Eligible for free trial"
-msgstr ""
-
 #: src/crm/enrich-contact.tsx
 msgid "email"
 msgstr ""
@@ -2702,6 +2702,10 @@ msgstr ""
 #: src/settings/referrals.tsx
 msgid "Free months earned"
 msgstr "받은 무료 개월 수"
+
+#: src/onboarding/account/before-login.tsx
+msgid "Free Pro with a work email"
+msgstr ""
 
 #: src/templates/template-icon-picker.tsx
 msgid "Frequently used"
@@ -3162,6 +3166,10 @@ msgstr ""
 msgid "Joined {0}"
 msgstr ""
 
+#: src/onboarding/account/after-login.tsx
+msgid "Keep {PRO_TRIAL_DAYS} days"
+msgstr ""
+
 #: src/settings/dictation.tsx
 msgid "Keep Anarlog running to use your shortcut in other apps."
 msgstr ""
@@ -3437,6 +3445,7 @@ msgid "macOS cannot access your login Keychain. Repairing briefly locks it and a
 msgstr ""
 
 #: src/auth/cloudsync-keychain-repair.tsx
+#: src/settings/sync/index.tsx
 msgid "macOS could not access your recovery key. Repair Keychain access, then resume sync."
 msgstr ""
 
@@ -4373,6 +4382,10 @@ msgstr ""
 msgid "Permissions granted"
 msgstr ""
 
+#: src/onboarding/account/after-login.tsx
+msgid "Personal email"
+msgstr ""
+
 #: src/crm/enrich-contact.tsx
 msgid "phone"
 msgstr ""
@@ -4509,6 +4522,10 @@ msgstr ""
 
 #: src/settings/general/billing.tsx
 msgid "Pro trial"
+msgstr ""
+
+#: src/onboarding/account/after-login.tsx
+msgid "Pro trial started"
 msgstr ""
 
 #: src/settings/appearance/app-icon.tsx
@@ -4787,6 +4804,7 @@ msgstr ""
 
 #: src/auth/cloudsync-keychain-repair.tsx
 #: src/settings/ai/shared/index.tsx
+#: src/settings/sync/index.tsx
 msgid "Repair Keychain Access"
 msgstr ""
 
@@ -5447,6 +5465,10 @@ msgstr ""
 msgid "Show meeting times as 14:00 instead of 2:00 PM."
 msgstr ""
 
+#: src/settings/general/app-settings.tsx
+msgid "Show release notes"
+msgstr ""
+
 #: src/main/windows-title-bar.tsx
 msgid "Show sidebar"
 msgstr ""
@@ -5570,10 +5592,6 @@ msgstr ""
 
 #: src/session-sharing/index.tsx
 msgid "Sign in to share this note with others."
-msgstr ""
-
-#: src/onboarding/index.tsx
-msgid "Sign in to unlock powerful AI models, sync across devices, and personalization."
 msgstr ""
 
 #: src/settings/sync/index.tsx
@@ -6243,10 +6261,6 @@ msgstr ""
 msgid "Trial"
 msgstr ""
 
-#: src/onboarding/account/after-login.tsx
-msgid "Trial activated - {trialDays} days of Pro"
-msgstr ""
-
 #: src/settings/referrals.tsx
 msgid "Trial started · Applying your free month"
 msgstr "체험 시작 · 무료 한 달 적용 중"
@@ -6357,6 +6371,10 @@ msgstr ""
 
 #: src/contacts/contact-page-header.tsx
 msgid "Unpin"
+msgstr ""
+
+#: src/onboarding/account/after-login.tsx
+msgid "Until {endsOn}"
 msgstr ""
 
 #: src/session/components/note-input/raw.tsx
@@ -6535,6 +6553,10 @@ msgstr ""
 
 #: src/lock/screen.tsx
 msgid "Use Windows Hello face, PIN, or password to view."
+msgstr ""
+
+#: src/onboarding/account/after-login.tsx
+msgid "Use work email"
 msgstr ""
 
 #: src/onboarding/permissions.tsx

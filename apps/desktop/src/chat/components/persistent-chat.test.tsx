@@ -46,13 +46,7 @@ vi.mock("~/contexts/shell", () => ({
 }));
 
 vi.mock("./chat-panel", () => ({
-  ChatPanelFrame: ({
-    onDraftContentChange,
-    onOpenRightPanel,
-  }: {
-    onDraftContentChange?: (hasDraftContent: boolean) => void;
-    onOpenRightPanel?: () => void;
-  }) => (
+  ChatPanelFrame: ({ onOpenRightPanel }: { onOpenRightPanel?: () => void }) => (
     <>
       <input aria-label="Chat draft" defaultValue="" />
       <button
@@ -61,13 +55,6 @@ vi.mock("./chat-panel", () => ({
         onClick={onOpenRightPanel}
       >
         Open right panel
-      </button>
-      <button
-        data-testid="mark-draft-content"
-        type="button"
-        onClick={() => onDraftContentChange?.(true)}
-      >
-        Mark draft content
       </button>
       <div data-testid="chat-view" />
     </>
@@ -116,27 +103,10 @@ describe("PersistentChatPanel", () => {
     });
   });
 
-  it("closes on backdrop click while the draft is empty", async () => {
+  it("does not close on backdrop click so the note behind stays interactive", async () => {
     render(<TestHost />);
 
     await screen.findByTestId("chat-view");
-
-    const floatingFrame = document.querySelector<HTMLElement>(
-      "[data-chat-floating-frame]",
-    );
-
-    fireEvent.click(floatingFrame!);
-
-    expect(mocks.sendEvent).toHaveBeenCalledWith({ type: "CLOSE" });
-  });
-
-  it("keeps the expanded composer open on backdrop click when draft has content", async () => {
-    render(<TestHost />);
-
-    await screen.findByTestId("chat-view");
-
-    fireEvent.click(screen.getByTestId("mark-draft-content"));
-    mocks.sendEvent.mockClear();
 
     const floatingFrame = document.querySelector<HTMLElement>(
       "[data-chat-floating-frame]",

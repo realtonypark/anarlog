@@ -16,7 +16,7 @@
     "@infisical/cli": "^0.43.72",
     "@tanstack/eslint-plugin-query": "^5.99.0",
     "braces": "3.0.3",
-    "decode-uri-component": "0.2.2",
+    "decode-uri-component": "0.5.1",
     "dprint": "^0.51.1",
     "eslint": "^9.39.4",
     "extract-zip": "2.0.1",
@@ -35,6 +35,6 @@
   },
   "packageManager": "pnpm@11.1.1",
   "engines": {
-    "node": ">=22"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   }
 }

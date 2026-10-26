@@ -137,7 +137,7 @@ function Component() {
         </nav>
 
         <header className="pt-10 pb-12">
-          <h1 className="font-hand text-5xl leading-[1.02] font-semibold tracking-normal text-balance text-black md:text-6xl">
+          <h1 className="font-hand text-5xl leading-[1.02] font-semibold tracking-normal text-pretty text-black md:text-6xl">
             {article.title}
           </h1>
           <div className="mt-6 flex items-center gap-2 text-sm text-[#756b5d]">

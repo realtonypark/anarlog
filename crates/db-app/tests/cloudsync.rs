@@ -1,7 +1,9 @@
 use std::collections::{HashMap, VecDeque};
+use std::fs::OpenOptions;
 use std::future::Future;
+use std::io::Write;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anlg_db_core::{
     CloudsyncAuth, CloudsyncNetworkResult, CloudsyncRuntimeConfig, Db, DbOpenOptions, DbStorage,
@@ -19,6 +21,12 @@ const SYNC_RETRY_INTERVAL: Duration = Duration::from_secs(2);
 const POLICY_SYNC_TIMEOUT: Duration = Duration::from_secs(30);
 const REPLICA_VISIBILITY_TIMEOUT: Duration = Duration::from_secs(90);
 const REPLICA_VISIBILITY_POLL_INTERVAL: Duration = Duration::from_secs(2);
+// A fresh site's first download waits while the provider prepares a snapshot of the
+// whole tenant history, so it grows with every account's data (sqliteai/sqlite-sync#80,
+// #81). This deadline only catches a stuck bootstrap; the latency itself is reported
+// through ANARLOG_CLOUDSYNC_LATENCY_LOG and judged by the deployment verifier.
+const FRESH_SITE_BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(180);
+const LATENCY_LOG_ENV: &str = "ANARLOG_CLOUDSYNC_LATENCY_LOG";
 
 fn cloudsync_config(auth: CloudsyncAuth, wait_ms: i64, max_retries: i64) -> CloudsyncRuntimeConfig {
     CloudsyncRuntimeConfig {
@@ -88,6 +96,89 @@ async fn setup_policy_db(token: &str, workspace_id: &str) -> Db {
     setup_db_with_network_options(token_auth(token), workspace_id, 2_500, 1).await
 }
 
+#[derive(Default)]
+struct BootstrapCounts {
+    sync_calls: u32,
+    empty_calls_before_first_page: u32,
+    first_page: Option<Duration>,
+    sync_call_time: Duration,
+    snapshot_resets: u32,
+    rows: i64,
+    chunks: i64,
+    bytes: i64,
+}
+
+// Splits one fresh-site bootstrap into the wait before the first received page (the
+// provider still preparing its snapshot answers with empty receives) and the time after
+// it (download, apply, and waiting for the expected record). Resolution is one sync
+// call, which can itself poll several times.
+struct BootstrapTrace {
+    started: Instant,
+    counts: Mutex<BootstrapCounts>,
+}
+
+impl BootstrapTrace {
+    fn start() -> Self {
+        Self {
+            started: Instant::now(),
+            counts: Mutex::new(BootstrapCounts::default()),
+        }
+    }
+
+    fn observe(&self, result: Option<&CloudsyncNetworkResult>, call_time: Duration) {
+        let mut counts = self.counts.lock().unwrap();
+        counts.sync_calls += 1;
+        counts.sync_call_time += call_time;
+        let Some(receive) = result.and_then(|result| result.receive.as_ref()) else {
+            return;
+        };
+        counts.rows += receive.rows;
+        counts.chunks += receive.chunks;
+        counts.bytes += receive.bytes;
+        if counts.first_page.is_none() {
+            if receive.rows > 0 || receive.chunks > 0 {
+                counts.first_page = Some(self.started.elapsed());
+            } else {
+                counts.empty_calls_before_first_page += 1;
+            }
+        }
+    }
+
+    fn observe_snapshot_reset(&self) {
+        self.counts.lock().unwrap().snapshot_resets += 1;
+    }
+}
+
+// Content-free: a check label, durations, sync counts, and whether the bootstrap
+// completed. A timed-out bootstrap is recorded too, since it is the slowest case worth
+// reporting.
+fn record_fresh_site_latency(check: &str, trace: &BootstrapTrace, completed: bool) {
+    let Ok(path) = std::env::var(LATENCY_LOG_ENV) else {
+        return;
+    };
+    let counts = trace.counts.lock().unwrap();
+    let entry = serde_json::json!({
+        "check": check,
+        "seconds": trace.started.elapsed().as_secs_f64(),
+        "completed": completed,
+        "first_page_seconds": counts.first_page.map(|elapsed| elapsed.as_secs_f64()),
+        "empty_calls_before_first_page": counts.empty_calls_before_first_page,
+        "sync_calls": counts.sync_calls,
+        "sync_call_seconds": counts.sync_call_time.as_secs_f64(),
+        "snapshot_resets": counts.snapshot_resets,
+        "rows": counts.rows,
+        "chunks": counts.chunks,
+        "bytes": counts.bytes,
+    });
+    let mut log = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .unwrap_or_else(|error| panic!("{LATENCY_LOG_ENV} could not be opened: {error}"));
+    writeln!(log, "{entry}")
+        .unwrap_or_else(|error| panic!("{LATENCY_LOG_ENV} could not be written: {error}"));
+}
+
 async fn stop_db(db: &Db, label: &str) {
     tokio::time::timeout(Duration::from_secs(15), db.cloudsync_stop())
         .await
@@ -96,7 +187,11 @@ async fn stop_db(db: &Db, label: &str) {
 }
 
 async fn sync_ok(db: &Db, label: &str) {
-    drive_sync_until_settled(label, SYNC_RETRY_INTERVAL, || async {
+    sync_ok_traced(db, label, None).await;
+}
+
+async fn sync_ok_traced(db: &Db, label: &str, trace: Option<&BootstrapTrace>) {
+    drive_sync_until_settled(label, SYNC_RETRY_INTERVAL, trace, || async {
         match tokio::time::timeout(SYNC_TIMEOUT, db.cloudsync_trigger_sync()).await {
             Ok(Ok(result)) => Ok(result),
             Ok(Err(error)) => Err(error.to_string()),
@@ -105,11 +200,7 @@ async fn sync_ok(db: &Db, label: &str) {
     })
     .await;
     let status = db.cloudsync_status().await.unwrap();
-    assert!(
-        status.last_error.is_none(),
-        "{label} recorded a sync error: {:?}",
-        status.last_error
-    );
+    assert!(status.last_error.is_none(), "{label} recorded a sync error");
 }
 
 #[derive(Debug, PartialEq)]
@@ -153,26 +244,25 @@ fn sync_step_state(result: &CloudsyncNetworkResult) -> SyncStepState {
 fn describe_sync_step(result: &CloudsyncNetworkResult) -> String {
     let failure = |failure: &Option<serde_json::Value>| match failure {
         None => "none".to_string(),
-        Some(failure) => {
-            let field = |key: &str| {
-                failure
-                    .get(key)
-                    .map_or_else(|| "?".to_string(), |value| value.to_string())
-            };
-            format!(
-                "code={} stage={} retryable={}",
-                field("code"),
-                field("stage"),
-                field("retryable")
-            )
-        }
+        Some(failure) => format!(
+            "present retryable={:?}",
+            failure
+                .get("retryable")
+                .and_then(serde_json::Value::as_bool)
+        ),
     };
     let send = result.send.as_ref().map_or_else(
         || "none".to_string(),
         |send| {
             format!(
                 "status={} local_version={} server_version={} chunks={} bytes={} last_failure={}",
-                send.status,
+                if send.status.eq_ignore_ascii_case("synced") {
+                    "synced"
+                } else if send.status.eq_ignore_ascii_case("syncing") {
+                    "syncing"
+                } else {
+                    "unknown"
+                },
                 send.local_version,
                 send.server_version,
                 send.chunks,
@@ -202,8 +292,12 @@ fn describe_sync_step(result: &CloudsyncNetworkResult) -> String {
     format!("send[{send}] receive[{receive}]")
 }
 
-async fn drive_sync_until_settled<F, Fut>(label: &str, retry_interval: Duration, mut step: F)
-where
+async fn drive_sync_until_settled<F, Fut>(
+    label: &str,
+    retry_interval: Duration,
+    trace: Option<&BootstrapTrace>,
+    mut step: F,
+) where
     F: FnMut() -> Fut,
     Fut: Future<Output = Result<CloudsyncNetworkResult, String>>,
 {
@@ -211,7 +305,12 @@ where
     let mut transport_failures = 0;
     let mut progress_steps = 0;
     loop {
-        match step().await {
+        let call_started = Instant::now();
+        let outcome = step().await;
+        if let Some(trace) = trace {
+            trace.observe(outcome.as_ref().ok(), call_started.elapsed());
+        }
+        match outcome {
             Ok(result) => {
                 history.push(describe_sync_step(&result));
                 match sync_step_state(&result) {
@@ -228,8 +327,8 @@ where
                     );
                 }
             }
-            Err(error) => {
-                history.push(format!("transport error: {error}"));
+            Err(_error) => {
+                history.push("transport error present".to_string());
                 transport_failures += 1;
                 if transport_failures == SYNC_ATTEMPTS {
                     panic!(
@@ -244,11 +343,18 @@ where
 }
 
 async fn sync_full_snapshot(db: &Db, label: &str) {
+    sync_full_snapshot_traced(db, label, None).await;
+}
+
+async fn sync_full_snapshot_traced(db: &Db, label: &str, trace: Option<&BootstrapTrace>) {
     db.cloudsync_network_reset_sync_version()
         .await
         .unwrap_or_else(|error| panic!("{label} snapshot reset failed: {error}"));
-    sync_ok(db, label).await;
-    sync_ok(db, &format!("{label} retry")).await;
+    if let Some(trace) = trace {
+        trace.observe_snapshot_reset();
+    }
+    sync_ok_traced(db, label, trace).await;
+    sync_ok_traced(db, &format!("{label} retry"), trace).await;
 }
 
 async fn assert_pending_change(db: &Db, operation: &str) {
@@ -380,15 +486,11 @@ async fn wait_for_e2ee_record(
     expected_payload: &str,
     operation: &str,
 ) -> Option<(String, String)> {
-    tokio::time::timeout(REPLICA_VISIBILITY_TIMEOUT, async {
+    let trace = BootstrapTrace::start();
+    let record = tokio::time::timeout(FRESH_SITE_BOOTSTRAP_TIMEOUT, async {
         loop {
-            sync_full_snapshot(db, operation).await;
-            let record: Option<(String, String)> =
-                sqlx::query_as("SELECT workspace_id, payload FROM e2ee_records WHERE id = ?")
-                    .bind(record_id)
-                    .fetch_optional(db.pool())
-                    .await
-                    .unwrap();
+            sync_full_snapshot_traced(db, operation, Some(&trace)).await;
+            let record = local_e2ee_record(db, record_id).await;
             if record.as_ref().is_some_and(|(workspace_id, payload)| {
                 workspace_id == expected_workspace_id && payload == expected_payload
             }) {
@@ -399,36 +501,40 @@ async fn wait_for_e2ee_record(
         }
     })
     .await
-    .unwrap_or(None)
+    .unwrap_or(None);
+    record_fresh_site_latency(operation, &trace, record.is_some());
+    record
 }
 
-async fn setup_stale_record_client(
-    owner_token: &str,
+async fn local_e2ee_record(db: &Db, record_id: &str) -> Option<(String, String)> {
+    sqlx::query_as("SELECT workspace_id, payload FROM e2ee_records WHERE id = ?")
+        .bind(record_id)
+        .fetch_optional(db.pool())
+        .await
+        .unwrap()
+}
+
+// Reuses an owner client that already holds the record, so a stale-copy attack does
+// not pay another fresh-site bootstrap. The client is unusable as the owner afterwards.
+async fn reauthenticate_as_stale_record_client(
+    db: &Db,
     attacker_token: &str,
     owner_workspace_id: &str,
     record_id: &str,
     expected_payload: &str,
     operation: &str,
-) -> Db {
-    let db = setup_db(owner_token, owner_workspace_id).await;
+) {
     assert_eq!(
-        wait_for_e2ee_record(
-            &db,
-            record_id,
-            owner_workspace_id,
-            expected_payload,
-            &format!("{operation} owner snapshot"),
-        )
-        .await,
+        local_e2ee_record(db, record_id).await,
         Some((owner_workspace_id.to_owned(), expected_payload.to_owned())),
-        "{operation} did not download the expected encrypted record"
+        "{operation} client does not hold the expected encrypted record"
     );
+    wait_for_unsent_changes(db, false, &format!("{operation} owner state")).await;
 
     db.cloudsync_network_set_token(attacker_token)
         .await
         .unwrap_or_else(|error| panic!("{operation} attacker reauthentication failed: {error}"));
-    wait_for_unsent_changes(&db, false, &format!("{operation} reauthentication")).await;
-    db
+    wait_for_unsent_changes(db, false, &format!("{operation} reauthentication")).await;
 }
 
 fn is_rls_policy_denial(message: &str) -> bool {
@@ -470,6 +576,22 @@ async fn expect_policy_sync_completed_or_denied(db: &Db, operation: &str) -> Res
         }
         tokio::time::sleep(SYNC_RETRY_INTERVAL).await;
     };
+    let status = db.cloudsync_status().await.unwrap();
+    policy_sync_outcome(
+        operation,
+        steps,
+        outcome.map_err(|error| error.to_string()),
+        status.last_error.as_deref(),
+    )
+}
+
+fn policy_sync_outcome(
+    operation: &str,
+    steps: usize,
+    outcome: Result<CloudsyncNetworkResult, String>,
+    runtime_error: Option<&str>,
+) -> Result<(), String> {
+    let mut denied = runtime_error.is_some_and(is_rls_policy_denial);
     let mut evidence = vec![format!("bounded sync steps: {steps}")];
     let mut clean_send = false;
     let mut clean_receive = true;
@@ -478,33 +600,36 @@ async fn expect_policy_sync_completed_or_denied(db: &Db, operation: &str) -> Res
             if let Some(send) = result.send {
                 clean_send =
                     send.status.eq_ignore_ascii_case("synced") && send.last_failure.is_none();
-                evidence.push(format!("send status: {}", send.status));
-                if let Some(last_failure) = send.last_failure {
-                    evidence.push(format!("send failure: {last_failure}"));
+                evidence.push(format!("send settled: {clean_send}"));
+                if let Some(failure) = &send.last_failure {
+                    denied |= is_rls_policy_denial(&failure.to_string());
+                    evidence.push("send failure present".to_string());
                 }
             }
             if let Some(receive) = result.receive {
-                if let Some(error) = receive.error {
+                if let Some(error) = &receive.error {
+                    denied |= is_rls_policy_denial(error);
                     clean_receive = false;
-                    evidence.push(format!("receive error: {error}"));
+                    evidence.push("receive error present".to_string());
                 }
-                if let Some(last_failure) = receive.last_failure {
+                if let Some(failure) = &receive.last_failure {
+                    denied |= is_rls_policy_denial(&failure.to_string());
                     clean_receive = false;
-                    evidence.push(format!("receive failure: {last_failure}"));
+                    evidence.push("receive failure present".to_string());
                 }
             }
         }
-        Err(error) => evidence.push(error.to_string()),
+        Err(error) => {
+            denied |= is_rls_policy_denial(&error);
+            evidence.push("transport error present".to_string());
+        }
     }
-    let status = db.cloudsync_status().await.unwrap();
-    let runtime_clean = status.last_error.is_none();
-    if let Some(error) = &status.last_error {
-        evidence.push(format!("runtime error: {error}"));
+    let runtime_clean = runtime_error.is_none();
+    if !runtime_clean {
+        evidence.push("runtime error present".to_string());
     }
 
-    if evidence.iter().any(|entry| is_rls_policy_denial(entry))
-        || (clean_send && clean_receive && runtime_clean)
-    {
+    if denied || (clean_send && clean_receive && runtime_clean) {
         Ok(())
     } else {
         Err(format!(
@@ -562,12 +687,14 @@ async fn same_personal_workspace_syncs_and_decrypts_a_real_note() {
     db_b.cloudsync_network_reset_sync_version()
         .await
         .expect("second personal client snapshot reset failed");
-    tokio::time::timeout(REPLICA_VISIBILITY_TIMEOUT, async {
+    let download_trace = BootstrapTrace::start();
+    let downloaded = tokio::time::timeout(FRESH_SITE_BOOTSTRAP_TIMEOUT, async {
         let mut attempt = 1;
         loop {
-            sync_ok(
+            sync_ok_traced(
                 &db_b,
                 &format!("second personal client download attempt {attempt}"),
+                Some(&download_trace),
             )
             .await;
             let stats = apply_e2ee_replica_changes(db_b.pool(), &keys)
@@ -581,11 +708,16 @@ async fn same_personal_workspace_syncs_and_decrypts_a_real_note() {
             tokio::time::sleep(REPLICA_VISIBILITY_POLL_INTERVAL).await;
         }
     })
-    .await
-    .unwrap_or_else(|_| {
+    .await;
+    record_fresh_site_latency(
+        "second personal client download",
+        &download_trace,
+        downloaded.is_ok(),
+    );
+    downloaded.unwrap_or_else(|_| {
         panic!(
             "second personal client did not receive encrypted fields within {} seconds",
-            REPLICA_VISIBILITY_TIMEOUT.as_secs()
+            FRESH_SITE_BOOTSTRAP_TIMEOUT.as_secs()
         )
     });
 
@@ -663,10 +795,18 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
     assert_ne!(owner_payload, initial_owner_payload);
     sync_ok(&owner, "workspace B encrypted note update").await;
 
+    // The only owner bootstrap before the attacks; this client later becomes the
+    // stale-copy UPDATE attacker instead of downloading the record again.
     let owner_round_trip = setup_db(&token_b, &workspace_b).await;
-    let round_trip_title = tokio::time::timeout(REPLICA_VISIBILITY_TIMEOUT, async {
+    let round_trip_trace = BootstrapTrace::start();
+    let round_trip_title = tokio::time::timeout(FRESH_SITE_BOOTSTRAP_TIMEOUT, async {
         loop {
-            sync_full_snapshot(&owner_round_trip, "workspace B update round trip").await;
+            sync_full_snapshot_traced(
+                &owner_round_trip,
+                "workspace B update round trip",
+                Some(&round_trip_trace),
+            )
+            .await;
             apply_e2ee_replica_changes(owner_round_trip.pool(), &keys_b)
                 .await
                 .unwrap();
@@ -686,7 +826,11 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
     })
     .await
     .unwrap_or(None);
-    stop_db(&owner_round_trip, "workspace B update round-trip client").await;
+    record_fresh_site_latency(
+        "workspace B update round trip",
+        &round_trip_trace,
+        round_trip_title.is_some(),
+    );
 
     let insert_attacker = setup_policy_db(&token_a, &workspace_a).await;
     sync_full_snapshot(&insert_attacker, "workspace A foreign read check").await;
@@ -740,8 +884,11 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
     .await;
     stop_db(&reassignment_attacker, "workspace reassignment attacker").await;
 
-    let update_attacker = setup_stale_record_client(
-        &token_b,
+    // Each stale-copy attack gets its own clean owner client, because one denied
+    // batch must not mask the other policy. Both already hold the record.
+    let update_attacker = &owner_round_trip;
+    reauthenticate_as_stale_record_client(
+        update_attacker,
         &token_a,
         &workspace_b,
         &owner_record_id,
@@ -756,14 +903,14 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
         .await
         .unwrap();
     assert_eq!(updated.rows_affected(), 1);
-    assert_pending_change(&update_attacker, "foreign payload UPDATE").await;
+    assert_pending_change(update_attacker, "foreign payload UPDATE").await;
     let update_result =
-        expect_policy_sync_completed_or_denied(&update_attacker, "workspace A foreign UPDATE")
-            .await;
-    stop_db(&update_attacker, "foreign UPDATE attacker").await;
+        expect_policy_sync_completed_or_denied(update_attacker, "workspace A foreign UPDATE").await;
+    stop_db(update_attacker, "foreign UPDATE attacker").await;
 
-    let delete_attacker = setup_stale_record_client(
-        &token_b,
+    let delete_attacker = &owner;
+    reauthenticate_as_stale_record_client(
+        delete_attacker,
         &token_a,
         &workspace_b,
         &owner_record_id,
@@ -777,21 +924,31 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
         .await
         .unwrap();
     assert_eq!(deleted.rows_affected(), 1);
-    assert_pending_change(&delete_attacker, "foreign DELETE").await;
+    assert_pending_change(delete_attacker, "foreign DELETE").await;
     let delete_result =
-        expect_policy_sync_completed_or_denied(&delete_attacker, "workspace A foreign DELETE")
-            .await;
-    stop_db(&delete_attacker, "foreign DELETE attacker").await;
+        expect_policy_sync_completed_or_denied(delete_attacker, "workspace A foreign DELETE").await;
+    stop_db(delete_attacker, "foreign DELETE attacker").await;
 
+    // Verification needs fresh sites: an existing client would keep rows that a
+    // successful attack deleted or moved out of its view. Both bootstraps run together.
     let verifier = setup_db(&token_b, &workspace_b).await;
-    let verified_record = wait_for_e2ee_record(
-        &verifier,
-        &owner_record_id,
-        &workspace_b,
-        &owner_payload,
-        "workspace B policy verification",
-    )
-    .await;
+    let workspace_a_verifier = setup_db(&token_a, &workspace_a).await;
+    let (verified_record, reassignment_owner_row) = tokio::join!(
+        wait_for_e2ee_record(
+            &verifier,
+            &owner_record_id,
+            &workspace_b,
+            &owner_payload,
+            "workspace B policy verification",
+        ),
+        wait_for_e2ee_record(
+            &workspace_a_verifier,
+            &reassignment_id,
+            &workspace_a,
+            &reassignment_payload,
+            "workspace A reassignment verification",
+        ),
+    );
     let foreign_insert_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*) FROM e2ee_records WHERE id = ?")
             .bind(&foreign_insert_id)
@@ -816,15 +973,6 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
             .await;
     }
 
-    let workspace_a_verifier = setup_db(&token_a, &workspace_a).await;
-    let reassignment_owner_row = wait_for_e2ee_record(
-        &workspace_a_verifier,
-        &reassignment_id,
-        &workspace_a,
-        &reassignment_payload,
-        "workspace A reassignment verification",
-    )
-    .await;
     cleanup_encrypted_records(
         &workspace_a_verifier,
         std::slice::from_ref(&reassignment_id),
@@ -832,13 +980,13 @@ async fn personal_workspace_tokens_block_foreign_encrypted_writes() {
     )
     .await;
 
+    // The owner client was reused as an attacker, so the clean verifier cleans up.
     cleanup_encrypted_records(
-        &owner,
+        &verifier,
         &note.record_ids,
         "workspace B encrypted record cleanup",
     )
     .await;
-    stop_db(&owner, "workspace B owner").await;
     stop_db(&verifier, "workspace B verifier").await;
     stop_db(&workspace_a_verifier, "workspace A verifier").await;
 
@@ -952,10 +1100,23 @@ fn upload_step(
     }
 }
 
+#[test]
+fn sync_diagnostics_do_not_expose_server_text() {
+    let secret = "private-server-content";
+    let failure = serde_json::json!({"code": secret, "stage": secret, "retryable": secret});
+    let mut result = upload_step(secret, 0, Some(failure.clone()));
+    let receive = result.receive.as_mut().unwrap();
+    receive.error = Some(secret.to_string());
+    receive.last_failure = Some(failure);
+    let diagnostic = describe_sync_step(&result);
+    assert!(!diagnostic.contains(secret));
+    assert!(diagnostic.contains("last_failure=present"));
+}
+
 async fn scripted_sync_outcome(steps: Vec<CloudsyncNetworkResult>) -> Result<(), String> {
     let steps = Arc::new(Mutex::new(VecDeque::from(steps)));
     tokio::spawn(async move {
-        drive_sync_until_settled("scripted upload", Duration::ZERO, || {
+        drive_sync_until_settled("scripted upload", Duration::ZERO, None, || {
             let mut steps = steps.lock().unwrap();
             let next = if steps.len() > 1 {
                 steps.pop_front()
@@ -987,7 +1148,7 @@ async fn bounded_out_of_sync_upload_continues_until_synced_or_fails_with_diagnos
         .unwrap_err();
     assert!(message.contains("did not settle after"), "{message}");
     assert!(
-        message.contains("status=out-of-sync local_version=2 server_version=0"),
+        message.contains("status=unknown local_version=2 server_version=0"),
         "{message}"
     );
 
@@ -1002,8 +1163,26 @@ async fn bounded_out_of_sync_upload_continues_until_synced_or_fails_with_diagnos
         .unwrap_err();
     assert!(message.contains("reported a sync failure"), "{message}");
     assert!(
-        message.contains(r#"code="internal_error" stage="apply_payload" retryable=true"#),
+        message.contains("last_failure=present retryable=Some(true)"),
         "{message}"
     );
     assert!(!message.contains("server detail"), "{message}");
+}
+
+#[test]
+fn policy_diagnostics_redact_runtime_errors_without_losing_denial_classification() {
+    let secret = "private server contents";
+    let message =
+        policy_sync_outcome("policy", 1, Err(secret.to_string()), Some(secret)).unwrap_err();
+    assert!(!message.contains(secret));
+    assert!(message.contains("runtime error present"));
+    assert!(
+        policy_sync_outcome(
+            "policy",
+            1,
+            Err(secret.to_string()),
+            Some("RLS policy denied: private server contents")
+        )
+        .is_ok()
+    );
 }

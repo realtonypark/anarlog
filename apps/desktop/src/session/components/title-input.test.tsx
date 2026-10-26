@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { type ComponentProps } from "react";
+import { type ComponentProps, useSyncExternalStore } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "@anlg/ui/components/ui/tooltip";
@@ -14,6 +14,8 @@ import { TooltipProvider } from "@anlg/ui/components/ui/tooltip";
 import { TitleInput } from "./title-input";
 
 const hoisted = vi.hoisted(() => ({
+  titleListeners: new Set<() => void>(),
+  generating: false,
   clearLiveTitle: vi.fn(),
   markLiveTitlePersisted: vi.fn(),
   setStoreTitle: vi.fn((_title?: string) => Promise.resolve()),
@@ -26,11 +28,21 @@ vi.mock("usehooks-ts", () => ({
 }));
 
 vi.mock("~/ai/hooks", () => ({
-  useTitleGenerating: () => false,
+  useTitleGenerating: () => hoisted.generating,
 }));
 
 vi.mock("~/session/queries", () => ({
-  useSession: () => ({ title: hoisted.storeTitle }),
+  useSession: () => ({
+    title: useSyncExternalStore(
+      (listener) => {
+        hoisted.titleListeners.add(listener);
+        return () => {
+          hoisted.titleListeners.delete(listener);
+        };
+      },
+      () => hoisted.storeTitle,
+    ),
+  }),
   useUpdateSession: () => (changes: { title?: string }) =>
     hoisted.setStoreTitle(changes.title),
 }));
@@ -72,11 +84,44 @@ const renderTitleInput = (
 describe("TitleInput", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hoisted.generating = false;
     hoisted.storeTitle = "Untitled";
   });
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("shows the latest generated title and restores editing without reopening the note", () => {
+    hoisted.generating = true;
+    hoisted.storeTitle = "";
+    const props = {
+      tab: {
+        active: true,
+        id: "session-1",
+        pinned: false,
+        slotId: "slot-1",
+        state: { autoStart: null, view: null },
+        type: "sessions",
+      },
+    } as ComponentProps<typeof TitleInput>;
+    const { rerender } = render(<TitleInput {...props} />);
+    hoisted.generating = false;
+    hoisted.storeTitle = "Initial title";
+    rerender(<TitleInput {...props} />);
+    act(() => {
+      hoisted.storeTitle = "Final generated title";
+      hoisted.titleListeners.forEach((listener) => listener());
+    });
+    expect(
+      (screen.getByPlaceholderText("Untitled") as HTMLInputElement).value,
+    ).toBe("Final generated title");
+    fireEvent.change(screen.getByPlaceholderText("Untitled"), {
+      target: { value: "My title" },
+    });
+    expect(
+      (screen.getByPlaceholderText("Untitled") as HTMLInputElement).value,
+    ).toBe("My title");
   });
 
   it("does not route escape from the title field into tab navigation", () => {

@@ -162,6 +162,37 @@ fn record_sync_result_tracks_settlement_and_failures() {
 }
 
 #[test]
+fn bounded_upload_reports_progress_until_the_remaining_versions_are_sent() {
+    let runtime = Mutex::new(CloudsyncRuntimeState::default());
+    let partial = network_result(Some("out-of-sync"), Some((0, true, None)));
+    assert_eq!(
+        cloudsync_next_delay(Some(&partial), true, Duration::from_secs(30)),
+        CLOUDSYNC_PROGRESS_INTERVAL
+    );
+    record_sync_result(
+        &runtime,
+        partial,
+        true,
+        CloudsyncActivityTrigger::Background,
+    );
+    {
+        let state = runtime.lock().unwrap();
+        assert!(state.last_error.is_none());
+        assert_eq!(state.consecutive_failures, 0);
+        assert!(state.last_sync_at_ms.is_none());
+    }
+    record_sync_result(
+        &runtime,
+        network_result(Some("synced"), Some((0, true, None))),
+        false,
+        CloudsyncActivityTrigger::Background,
+    );
+    let state = runtime.lock().unwrap();
+    assert!(state.last_error.is_none());
+    assert!(state.last_sync_at_ms.is_some());
+}
+
+#[test]
 fn background_sync_uses_shared_receive_errors() {
     assert_eq!(
         crate::cloudsync_receive_error(&CloudsyncNetworkResult {
@@ -434,4 +465,39 @@ async fn confirmed_prefix_retry_sends_the_tail_without_recording_a_sync_failure(
         .unwrap()
     );
     server.await.unwrap();
+}
+
+#[test]
+fn logged_failure_does_not_expose_server_text() {
+    let failure = serde_json::json!({
+        "code": "apply_conflict", "stage": "apply", "retryable": true,
+        "failedAt": "secret timestamp text", "message": "secret row contents"
+    });
+    assert_eq!(
+        logged_failure(Some(&failure)),
+        LoggedFailure {
+            code: Some("apply_conflict"),
+            stage: Some("apply"),
+            retryable: Some(true),
+        }
+    );
+    let failure = serde_json::json!({
+        "code": "secret", "stage": "secret", "retryable": "secret",
+        "failedAt": "secret", "message": "secret"
+    });
+    assert_eq!(
+        logged_failure(Some(&failure)),
+        LoggedFailure {
+            code: Some("unknown"),
+            stage: Some("unknown"),
+            retryable: None,
+        }
+    );
+    assert_eq!(
+        logged_failure(Some(&serde_json::json!({
+            "code": 409, "stage": {"message": "secret"}, "retryable": []
+        }))),
+        LoggedFailure::default()
+    );
+    assert_eq!(logged_failure(None), LoggedFailure::default());
 }

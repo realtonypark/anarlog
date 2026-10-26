@@ -8,25 +8,25 @@ category: "Comparisons"
 date: "2026-09-02"
 ---
 
-"Fred from Fireflies" joins your call, records the conversation, and sends everyone a summary afterward. Convenient, until you start wondering where that recording goes and who can see it.
+"Fred from Fireflies" can join your call, record the conversation, and generate a recap. Before recording a sensitive meeting, check where that content goes and who can open it.
 
-So I read Fireflies' current privacy policy, terms of service, and security page. Fireflies has changed a fair amount since I last covered it, adding a real bot-free capture option and a formal Zero Data Retention commitment for meeting content. Some of the older concerns about broad data collection and sharing still hold up. Here's what's actually true today, sourced from Fireflies' own documents.
+Fireflies documents safeguards against AI training and vendor retention, but those promises don't mean your meeting disappears after processing. Sharing permissions, storage, connected AI tools, and your organization's requirements still matter. I checked its current policies and help guides on **October 25, 2026**; here's how those boundaries work.
 
 ## What Is Fireflies AI Today?
 
-![Fireflies' security page listing its SOC 2 Type II, GDPR, and HIPAA certifications alongside its Zero Data Retention policy](https://static.anarlog.so/blog/articles/is-fireflies-ai-safe/fireflies-security-compliance.png)
-*Fireflies' security page listing its SOC 2 Type II, GDPR, and HIPAA certifications. Source: [Fireflies](https://fireflies.ai/).*
+![Fireflies' security page displaying SOC 2 Type II, GDPR, HIPAA, and Zero Data Retention claims](anarlog/blog/articles/is-fireflies-ai-safe/fireflies-security-compliance.png)
+*Fireflies' security and compliance claims. Source: [Fireflies security page](https://fireflies.ai/security).*
 
 
-Fireflies is a cloud meeting assistant that has traditionally worked by sending the "Fireflies.ai Notetaker" bot into your Zoom, Google Meet, or Microsoft Teams call to record, transcribe, and summarize it. That's still the default experience for most users.
+Fireflies is a cloud meeting assistant. Its "Fireflies.ai Notetaker" bot can join Zoom, Google Meet, or Microsoft Teams calls to record, transcribe, and summarize them.
 
-Two things changed this year. Fireflies now offers a **Google Meet SDK integration** that records natively without a visible bot (a consent banner appears instead), and a **desktop "Take Notes" mode** that captures system audio with no bot at all. Both drop features (no speaker labels, no Sales Assist, and the SDK path needs a participant to approve first); the bot is still the only path to the full feature set, including CRM sync and Live Assist.
+It also offers a **Google Meet SDK integration** and a **desktop "Take Notes" mode** for capture without a visible bot. These are different capture methods with different limits. In particular, [Live Assist works with both desktop bot capture and Take Notes](https://guide.fireflies.ai/articles/7066927951-bot-vs-no-bot-which-capture-am-i-using); it isn't exclusive to the bot.
 
-Everything you record, whether through the bot or the bot-free paths, is still processed on Fireflies' servers, not your device.
+Removing the bot doesn't make Fireflies an on-device transcription service. Meeting content still goes through its cloud processing.
 
 ## What Fireflies Actually Collects
 
-Fireflies' [privacy policy](https://fireflies.ai/privacy-policy) (last updated March 6, 2026) is broader than most people expect from a note-taking tool:
+Fireflies' [privacy policy](https://fireflies.ai/privacy-policy) is dated **September 28, 2026**. It covers account and service-related personal information; business customers' meeting content is governed separately by their [terms of service](https://fireflies.ai/terms-of-service), [Data Processing Addendum](https://fireflies.ai/data-processing-agreement), and other agreements.
 
 **From meetings:** audio and visual recordings, transcripts, summaries, participant names and emails, meeting titles and URLs.
 
@@ -38,77 +38,73 @@ Fireflies' [privacy policy](https://fireflies.ai/privacy-policy) (last updated M
 
 Fireflies also discloses personal information to categories of third parties, per its state-privacy-law disclosures: vendors and service providers, integration partners, corporate affiliates, law enforcement when legally required, professional advisors, and parties involved in a corporate transaction such as an acquisition.
 
-None of this is unusual for a cloud SaaS product. It's the same broad collection pattern most bot-based transcription tools use, since the bot needs calendar and platform access to function.
+Check the permissions for the integrations you actually enable rather than assuming every connection has the same access.
 
 ## What Fireflies Has Fixed
 
-The most significant change since this was last written: Fireflies now states plainly that it does **not use personal information to train AI models**, and contractually prohibits its vendors from doing so with your data either. Its terms of service go further, stating Fireflies "will not use your User Content to train, retrain, fine-tune or otherwise improve any generative artificial intelligence models".
+Fireflies states that it **does not train AI models on personal information** and prohibits its vendors from doing so. Its terms also exclude using customer content to train or improve generative AI models.
 
-For meeting content specifically, Fireflies applies what it calls a **Zero Data Retention** policy: audio, video, transcripts, and summaries are not stored by any third-party vendor after processing, not accessed by a vendor once the service completes, and not used for training. Account-level personal information (your name, email, billing info) follows a separate rule: it's kept while your account is active and deleted within 30 days of account closure.
+For core meeting features, its [Zero Data Retention policy](https://guide.fireflies.ai/articles/2154538358-policy-on-keeping-information-safe) means processing vendors cannot retain meeting audio, video, transcripts, or summaries after processing or use them for training. **This is a vendor-processing promise, not a promise that Fireflies deletes your meeting history immediately.** Its terms describe deletion after you remove content, with exceptions for copies in other users' accounts, backups, and legal obligations.
 
-Fireflies also holds SOC 2 Type II, GDPR, and HIPAA certifications (HIPAA specifically as an Enterprise-plan add-on, more on that below), runs a public bug bounty program, and offers meeting-level sharing controls, including a "Only Owner" setting that restricts a recap to just you.
+Account personal information follows a separate rule: the privacy policy says it is kept while your account is active and deleted within 30 days of closure. Other personal information can be retained for the purposes described in the policy; don't apply the account timeline to every meeting copy or connected service.
+
+**MCP has a separate boundary.** Fireflies' [MCP guide](https://guide.fireflies.ai/articles/3039542843-learn-about-fireflies-mcp-server-connect-your-ai-tool?lang=en) says its ZDR promise does not cover data shared with external AI tools through MCP. The destination's retention and training terms apply. Review that tool before making meeting transcripts available to it.
+
+Fireflies' [security page](https://fireflies.ai/security) lists SOC 2 Type II and describes GDPR and HIPAA controls. A vendor's compliance badges don't establish that every account configuration is suitable for your meeting. The Enterprise healthcare setup has additional requirements, covered below.
+
+### Where Are Fireflies' Servers and Meeting Records?
+
+For its Enterprise storage options, Fireflies' [Private Storage guide](https://guide.fireflies.ai/articles/3687416644-learn-about-private-storage) says processing happens on U.S. servers even when data is stored in a designated bucket. It describes managed Private Storage on Google Cloud in US West Los Angeles and a separate bring-your-own-storage option with more customization. Storage location and processing location are different questions. Confirm both for your account and contract if data residency matters; choosing a storage bucket doesn't turn transcription into local processing.
 
 ## Where the Real Friction Still Is
 
-![Fireflies' meeting recap sharing settings, with 'Teammates & anyone with the link' set as the default access level](https://static.anarlog.so/blog/articles/is-fireflies-ai-safe/fireflies-recap-sharing-defaults.png)
+![Fireflies' meeting recap sharing settings, with 'Teammates & anyone with the link' set as the default access level](anarlog/blog/library/products/fireflies/privacy/2026-09-22-recap-audience.png)
 *Fireflies' meeting recap sharing settings. Source: [Fireflies](https://fireflies.ai/).*
 
 
-**The default sharing setting is wider than most people expect.** Out of the box, new meeting recaps use "Teammates & anyone with the link": anyone in your Fireflies workspace can see the meeting under their #AllMeetings tab, even if they weren't invited, and anyone who gets forwarded the link can open it. You can tighten this per meeting or set a stricter workspace default (Only Participants, Only Teammates, or Only Owner), but you have to do it yourself.
+**Check who can open a recap, separately from who receives its email.** Fireflies' [sharing guide](https://guide.fireflies.ai/articles/5319481450-how-to-configure-privacy-settings-for-your-meeting-recaps) documents "Teammates & anyone with the link" as the default: workspace teammates can find the meeting in #AllMeetings, and a forwarded link can grant access. Available content for unauthenticated visitors depends on the plan and Public Meeting Access setting. Review your actual workspace default and each sensitive meeting's Share settings. [Recap email recipients and viewing permissions are separate controls](https://guide.fireflies.ai/articles/7339665361-how-to-configure-meeting-recap-emails-and-privacy-settings); sending fewer emails doesn't by itself restrict link access.
 
-**Fireflies still grants itself a broad license to your content.** Its terms give Fireflies a "nonexclusive, royalty-free, worldwide, fully paid, and sublicensable" license to your recordings and transcripts, described as perpetual and irrevocable. That license is contractually scoped to providing you the service and explicitly excludes AI training, but it's still broader than most people assume they're signing up for.
+**The content license is broad but purpose-limited.** The terms describe a perpetual, irrevocable, sublicensable license scoped to providing the service to you and authorized users. That license does not override the separate no-AI-training commitment.
 
-**Liability is capped low.** If something goes wrong, Fireflies' maximum liability is the greater of $100 or what you paid in the past six months. A leaked confidential meeting doesn't come with meaningful financial recourse.
+**The standard terms limit liability, with exceptions.** Section 18 generally caps liability at the greater of $100 or the preceding six months' fees. Exceptions include gross negligence, fraud, intentional misconduct, and liabilities that applicable law doesn't allow the parties to exclude. Review your signed agreement rather than assuming the cap settles every possible claim.
 
-**Recording consent is still your responsibility.** Fireflies' terms require every meeting participant to consent to being recorded, and that obligation sits with you, the host, not with Fireflies, even when the bot joined automatically through a calendar integration you set up once and forgot about.
+**Recording consent remains your responsibility.** The terms require participant consent. A bot, recording banner, or enabled calendar integration doesn't replace meeting your organization's recording rules and applicable consent requirements.
 
-**HIPAA compliance requires the Enterprise plan.** Fireflies' security page markets HIPAA compliance as a general badge, but its own pricing page lists HIPAA compliance, private storage, and custom data retention as Enterprise-only additions on top of Business. Free, Pro, and Business customers don't get it by default.
-
-A recent review analysis from [Unstar](https://unstar.app/blog/otter-fireflies-notta-rev-tactiq-ai-meeting-transcription-apps-ranked-2026), based on app-store and review-site complaint patterns, flags two more Fireflies-specific friction points. Its CRM auto-logging occasionally attaches meeting notes to the wrong Salesforce or HubSpot record when email domains or attendee lists are ambiguous. And its bot can keep recording after the original host leaves a call while other attendees stay connected, an unintentional but real gap for calls that outlast the host.
+**Enterprise alone isn't the full HIPAA setup.** Fireflies' [HIPAA instructions](https://guide.fireflies.ai/articles/3704059205-set-up-hipaa-compliance-for-your-workspace?lang=en) require the Enterprise plan, enabled Private Storage, and a signed Business Associate Agreement (BAA). A badge on the security page doesn't establish that those conditions are enabled for your workspace.
 
 ## The Bot-Free Option, and Its Limits
 
-![The consent banner Fireflies shows when recording through its Google Meet SDK integration instead of sending a visible bot](https://static.anarlog.so/blog/articles/is-fireflies-ai-safe/fireflies-botfree-consent-banner.png)
+![The consent banner Fireflies shows when recording through its Google Meet SDK integration instead of sending a visible bot](anarlog/blog/articles/is-fireflies-ai-safe/fireflies-botfree-consent-banner.png)
 *Fireflies' bot-free consent banner. Source: [Fireflies](https://fireflies.ai/).*
 
 
-If you want to avoid a visible bot, Fireflies' Google Meet SDK integration and desktop "Take Notes" system-audio mode both work without one. The SDK path still requires one participant to explicitly approve the recording banner shown above, and any attendee can revoke it mid-call. That's a genuine improvement over always sending a bot into the meeting. It comes with tradeoffs too: no speaker labels, no Sales Assist, and, for Take Notes, no separate audio or video file, only a transcript and summary.
+Fireflies' [Google Meet SDK guide](https://guide.fireflies.ai/articles/3309351579-integrate-google-meet-sdk-with-fireflies-for-bot-free-meeting-recording) says capture starts after approval by a participant from the host's domain; other attendees can stop sharing. It captures up to three active participants' audio/video streams at a time and doesn't capture meeting chat or captions.
+
+Desktop Take Notes has different limits: it creates a transcript and summary without saving a separate audio/video recording, and lacks named speaker labels and Sales Assist. [Live Assist is available in Take Notes](https://guide.fireflies.ai/articles/1208704416-getting-started-with-the-fireflies-desktop-app?lang=en). Choose the capture method based on the record you need, then review where that record is processed and shared.
 
 ## Should You Trust Fireflies With Sensitive Information?
 
-**Use the Enterprise plan, tighten sharing defaults, and confirm a BAA for:**
+Use these checks before your first sensitive meeting:
 
-- Healthcare discussions involving patient information
-- Legal meetings requiring attorney-client privilege
-- Financial services conversations with client data
-
-**Set your workspace default to "Only Participants" or "Only Owner" before using it for:**
-
-- Internal meetings with sensitive company information
-- HR discussions, performance reviews, or job interviews
-- Executive or board-level conversations
-
-**The default settings are fine for:**
-
-- Public webinars or presentations
-- Non-confidential training sessions
-- Casual team or social meetings
-
-Whatever the setting, every participant still needs to consent to being recorded, and that responsibility is yours, not Fireflies'.
+1. **Approve the data path.** Confirm that your organization permits Fireflies, its processing locations, and any connected AI tools for this information. Legal and financial confidentiality requirements need their own review; a healthcare BAA doesn't answer them.
+2. **Restrict the audience.** Consider "Only Owner" with explicit invitations for confidential meetings. Check workspace defaults, the meeting's Share settings, and recap email recipients separately.
+3. **Set the retention expectations.** Confirm how long meeting records stay in your workspace, what deletion covers, and whether copies exist in other accounts or integrations.
+4. **For healthcare workflows involving PHI, verify all three vendor prerequisites:** Enterprise, Private Storage, and an executed BAA. Have the responsible team approve the workflow before recording.
+5. **Arrange participant consent.** Tell people what will be captured and shared before starting. Recheck automatic capture settings when the meeting audience or purpose changes.
 
 ## A Private Alternative: Anarlog
 
-If you'd rather not route meeting content through a cloud vendor at all, [local AI meeting notetakers](/blog/local-ai-meeting-notes/) process everything on your device instead.
+If you want an on-device option, our [local AI meeting notes guide](/blog/local-ai-meeting-notes/) explains how local speech and language models change the data path. That depends on configuration, not just a "local-first" label.
 
-![Anarlog's meeting summary view](https://static.anarlog.so/blog/library/products/anarlog/desktop/2026-08-20-meeting-summary.jpg)
+![Anarlog's meeting summary view](anarlog/blog/library/products/anarlog/desktop/2026-08-20-meeting-summary.jpg)
 
 Anarlog is an open-source AI notepad for meetings that stores your canonical meeting record locally in SQLite instead of a vendor-hosted workspace. Markdown export is available when you want a portable copy. See our [Fireflies AI Alternatives](/blog/fireflies-ai-alternatives) article for a full Anarlog-vs-Fireflies comparison.
 
-**Your choice of AI stack:** managed cloud service ($14/month or $140/year), bring your own API keys, or run local models via Ollama. You choose which AI provider touches your data, not a single vendor.
+**Your choice of AI stack:** use hosted AI, bring your own API keys, or run local models via Ollama. Hosted or bring-your-own-key processing sends content to the provider you select; choose local models for on-device processing.
 
-**Bot-free on every platform by default:** Anarlog captures system audio and microphone directly on Zoom, Teams, Google Meet, phone calls, or in-person conversations, without a bot joining and without needing a separate SDK integration per platform.
+**Bot-free capture:** Anarlog captures system audio and microphone for Zoom, Teams, Google Meet, phone calls, or in-person conversations, without a bot joining and without needing a separate SDK integration per meeting platform.
 
-**You control distribution:** export to Markdown, PDF, or rich text, and connect the tools you already use. No vendor-hosted recap link that defaults to being visible to your whole workspace.
+**You control distribution:** export Markdown when you want a portable copy. Optional CloudSync and sharing have separate data paths; review those settings as well as your AI provider.
 
 **What Anarlog itself collects, for the same transparency this article asks of Fireflies:** pseudonymous usage and diagnostic data, device and log data, whatever content you deliberately send to optional cloud features (hosted transcription, AI, sharing, or connectors), website analytics, and payment data processed by Stripe. Meeting audio, transcripts, notes, and summaries aren't part of Anarlog's own analytics or telemetry. [Read Anarlog's privacy policy](/privacy) for the full breakdown.
 
@@ -116,8 +112,6 @@ A local-only configuration reduces how much of your meeting content leaves your 
 
 ## Is Fireflies AI Safe?
 
-Safer than it looked a year ago, and more honest about it. Zero Data Retention for meeting content, no AI training on personal data, and real bot-free capture options are genuine improvements worth crediting. The parts still worth knowing before you rely on it: a broad default sharing setting, a low liability cap, a broad (if scoped) content license, and HIPAA compliance that's gated behind the Enterprise plan.
-
-None of that makes Fireflies unsafe to use. It makes it a tool where the defaults deserve five minutes of attention before your first sensitive meeting, and where checking the current policy yourself beats taking anyone's older writeup, including this one, at face value.
+Fireflies documents useful safeguards: no AI training on customer content, ZDR for its core processing vendors, and controls over meeting access. Whether it fits your meeting depends on your sharing configuration, storage and processing requirements, connected AI tools, and contractual obligations. Check those together before treating a bot-free mode or compliance badge as sufficient approval.
 
 &nbsp;

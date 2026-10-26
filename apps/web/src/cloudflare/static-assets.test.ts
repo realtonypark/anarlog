@@ -3,7 +3,7 @@ import test from "node:test";
 
 import worker from "./static-assets.ts";
 
-test("serves static asset metadata through the shared Supabase handler without leaking app credentials", async (t) => {
+test("serves static asset metadata from the shared R2 origin without leaking app credentials", async (t) => {
   const digest = "a".repeat(64);
   t.mock.method(
     globalThis,
@@ -11,7 +11,7 @@ test("serves static asset metadata through the shared Supabase handler without l
     async (url: string, options: RequestInit) => {
       assert.equal(
         url,
-        `https://ijoptyyjrfqwaqhyxkxj.supabase.co/storage/v1/object/public/public_images/desktop/${digest}/icon.svg`,
+        `https://static.fastrepl.com/anarlog/desktop/${digest}/icon.svg`,
       );
       assert.equal(options.method, "HEAD");
       const headers = new Headers(options.headers);
@@ -76,4 +76,37 @@ test("serves blog preview HEAD requests from the image generator without returni
   assert.equal(response.headers.get("content-type"), "image/png");
   assert.equal(response.headers.get("set-cookie"), null);
   assert.equal(await response.text(), "");
+});
+
+test("redirects moved objects to their new path without fetching the old one", async (t) => {
+  t.mock.method(globalThis, "fetch", () => {
+    throw new Error("unexpected fetch");
+  });
+  const response = await worker.fetch(
+    new Request(
+      "https://static.anarlog.so/blog/articles/free-ai-notetakers/free-11.webp",
+    ),
+  );
+  assert.equal(response.status, 301);
+  assert.equal(
+    response.headers.get("location"),
+    "https://static.anarlog.so/blog/library/products/otter/meeting-summary/2026-08-27-summary-card.webp",
+  );
+  const encoded = await worker.fetch(
+    new Request(
+      "https://static.anarlog.so/blog/articles/free-ai-notetakers/free%2D11.webp",
+    ),
+  );
+  assert.equal(encoded.status, 301);
+  const preflight = await worker.fetch(
+    new Request(
+      "https://static.anarlog.so/blog/articles/free-ai-notetakers/free-11.webp",
+      { method: "OPTIONS" },
+    ),
+  );
+  assert.equal(preflight.status, 204);
+  const inherited = await worker.fetch(
+    new Request("https://static.anarlog.so/constructor"),
+  );
+  assert.notEqual(inherited.status, 301);
 });
