@@ -1,0 +1,16 @@
+apps/desktop/src/session/components/note-input/markdown-import.test.ts
+  h_05e5164a29872e 64-71,73
+apps/desktop/src/session/components/note-input/markdown-import.ts
+  h_05e5164a29872e 72-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cddd32ab119e629827dc24e692146df1ed37ac4c",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
