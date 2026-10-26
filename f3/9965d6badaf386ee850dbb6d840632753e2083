@@ -1,0 +1,16 @@
+apps/desktop/src/session/components/note-input/file-handler.ts
+  h_05e5164a29872e 172-174
+apps/desktop/src/session/components/note-input/raw.test.tsx
+  h_05e5164a29872e 23-25,50-55,261,841-875,915-923
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f39965d6badaf386ee850dbb6d840632753e2083",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
