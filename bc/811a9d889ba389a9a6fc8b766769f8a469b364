@@ -1,0 +1,22 @@
+apps/desktop/src/ai/fallback.test.ts
+  h_05e5164a29872e 52-72,138-183,236-429
+apps/desktop/src/ai/hooks/useLLMConnection.test.ts
+  h_05e5164a29872e 8-19,21,23-25,46-47,53-54,179-304
+apps/desktop/src/ai/hooks/useLLMConnection.ts
+  h_05e5164a29872e 180-187
+apps/desktop/src/stt/useRunBatch.test.ts
+  h_05e5164a29872e 45,68,92-101,1395-1577
+apps/desktop/src/stt/useRunBatch.ts
+  h_05e5164a29872e 311-317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc811a9d889ba389a9a6fc8b766769f8a469b364",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
