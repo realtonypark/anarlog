@@ -1,0 +1,22 @@
+apps/desktop/src/session/components/note-input/enhanced/editor.test.tsx
+  h_05e5164a29872e 35
+apps/desktop/src/session/components/note-input/file-handler.ts
+  h_05e5164a29872e 14,18-19,137-179,197
+apps/desktop/src/session/components/note-input/markdown-import.test.ts
+  h_05e5164a29872e 4,6,85-130
+apps/desktop/src/session/components/note-input/markdown-import.ts
+  h_05e5164a29872e 10-22,45-61,74-77
+apps/desktop/src/session/components/note-input/raw.test.tsx
+  h_05e5164a29872e 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "09482af9dedf6ff1470ee745c11713195924bb2f",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
