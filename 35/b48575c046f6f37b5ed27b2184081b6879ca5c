@@ -1,0 +1,18 @@
+apps/desktop/src/main/empty.test.tsx
+  h_05e5164a29872e 17,43,127-151
+apps/desktop/src/session/components/note-input/markdown-import.ts
+  h_05e5164a29872e 12,82,90,94
+apps/desktop/src/shared/useNewNote.ts
+  h_05e5164a29872e 9,11-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "35b48575c046f6f37b5ed27b2184081b6879ca5c",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
