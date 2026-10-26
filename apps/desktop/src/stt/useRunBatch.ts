@@ -12,12 +12,13 @@ import {
   type TranscriptionParams,
 } from "@anlg/plugin-transcription";
 import { toast } from "@anlg/ui/components/ui/toast";
+import { isUserError } from "@anlg/user-error";
 
 import { BatchResponseProcessingError } from "./batch-response-processing-error";
 import { completeCaptureTranscript } from "./capture-completion";
 import { useListener } from "./contexts";
 import { persistTranscriptWrite } from "./persist-retry";
-import { useSTTConnection } from "./useSTTConnection";
+import { resolveByokSttConnection, useSTTConnection } from "./useSTTConnection";
 
 import { useAuth } from "~/auth";
 import { useBillingAccess } from "~/auth/billing-context";
@@ -29,6 +30,7 @@ import {
 } from "~/services/audio-retention";
 import { maybeExtractVoiceprintCandidates } from "~/services/voiceprint";
 import { useSession, useSessionParticipants } from "~/session/queries";
+import { getStoredAiProvider } from "~/settings/providers";
 import { useConfigValue } from "~/shared/config";
 import { id } from "~/shared/utils";
 import {
@@ -282,6 +284,57 @@ function isTranscriptionAuthenticationError(error: unknown) {
   );
 }
 
+export type SttFailureDecision = "failover" | "retry" | "none";
+
+export function classifySttFailure(error: unknown): SttFailureDecision {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/\b402\b|\b403\b/.test(message) || isUserError(error)) {
+    return "failover";
+  }
+  if (!isTerminalTranscriptionError(error)) {
+    return "retry";
+  }
+  return isTranscriptionAuthenticationError(error) ? "failover" : "none";
+}
+
+async function getUserFallbackTarget({
+  providerId,
+  model,
+  primary,
+  languages,
+}: {
+  providerId: string | undefined;
+  model: string | undefined;
+  primary: Pick<BatchTarget, "provider" | "model">;
+  languages: readonly string[];
+}): Promise<BatchTarget | "ineligible" | null> {
+  if (!providerId || !model || providerId === "anarlog") {
+    return null;
+  }
+  const provider = getBatchProvider(providerId, model);
+  if (!provider) {
+    return "ineligible";
+  }
+  if (provider === primary.provider && model === primary.model) {
+    return null;
+  }
+  if (!(await canUseBatchTarget(provider, model, languages))) {
+    return "ineligible";
+  }
+  const stored = await getStoredAiProvider("stt", providerId).catch(
+    () => undefined,
+  );
+  const connection = resolveByokSttConnection({
+    providerId,
+    model,
+    providerConfig: stored,
+  });
+  if (!connection) {
+    return null;
+  }
+  return { ...connection, provider, label: model };
+}
+
 export function isTerminalTranscriptionError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return (
@@ -327,6 +380,8 @@ export const useRunBatch = (sessionId: string) => {
     useConfigValue("audio_retention"),
   );
   const rememberSpeakers = useConfigValue("remember_speakers") === true;
+  const fallbackSttProvider = useConfigValue("fallback_stt_provider");
+  const fallbackSttModel = useConfigValue("fallback_stt_model");
 
   return useCallback(
     async (filePath: string, options?: RunOptions) => {
@@ -393,7 +448,7 @@ export const useRunBatch = (sessionId: string) => {
       const shouldUseSelectedTarget =
         selectedTargetSupported ||
         (fallbackTarget && sameBatchTarget(selectedTarget, fallbackTarget));
-      let target = options?.resume
+      const initialTarget = options?.resume
         ? {
             provider: options.resume.provider,
             model: options.resume.model,
@@ -405,13 +460,14 @@ export const useRunBatch = (sessionId: string) => {
           ? (selectedTarget ?? fallbackTarget)
           : fallbackTarget;
 
-      if (!target) {
+      if (!initialTarget) {
         throw new Error(
           selectedTarget && !selectedOnDeviceUnsupported
             ? `${selectedProviderLabel(conn, selectedModel)} is not available for batch transcription with the selected languages. Choose languages it supports, or configure another speech-to-text provider.`
             : `${selectedProviderLabel(conn, selectedModel)} is not available for batch transcription on this platform. Configure a batch-capable speech-to-text provider.`,
         );
       }
+      let target: BatchTarget = initialTarget;
 
       if (target.provider === "anarlog" && target.model === "cloud") {
         if (!cloudAccessToken) {
@@ -573,6 +629,59 @@ export const useRunBatch = (sessionId: string) => {
               }
             }
           };
+          const runWithUserFallback = async (
+            error: unknown,
+            current: BatchTarget,
+          ): Promise<BatchTarget> => {
+            const decision = classifySttFailure(error);
+            if (decision === "none") {
+              throw error;
+            }
+            let latest = error;
+            if (decision === "retry") {
+              try {
+                if (!handlePersist) {
+                  resetStagedTranscript();
+                }
+                await run(params);
+                return current;
+              } catch (retryError) {
+                if (classifySttFailure(retryError) === "none") {
+                  throw retryError;
+                }
+                latest = retryError;
+              }
+            }
+            const fallbackTarget = await getUserFallbackTarget({
+              providerId: fallbackSttProvider,
+              model: fallbackSttModel,
+              primary: current,
+              languages,
+            });
+            if (fallbackTarget === "ineligible") {
+              toast.warning("Fallback provider cannot transcribe this audio", {
+                description: `${fallbackSttModel} does not support batch transcription with the selected languages.`,
+              });
+              throw latest;
+            }
+            if (!fallbackTarget) {
+              throw latest;
+            }
+            toast.warning("Primary provider failed, using fallback", {
+              description: `${current.label} failed. Using ${fallbackTarget.label} instead.`,
+            });
+            if (!handlePersist) {
+              resetStagedTranscript();
+            }
+            await run({
+              ...params,
+              provider: fallbackTarget.provider,
+              model: fallbackTarget.model,
+              base_url: fallbackTarget.baseUrl,
+              api_key: fallbackTarget.apiKey,
+            });
+            return fallbackTarget;
+          };
           try {
             await run(params);
           } catch (error) {
@@ -589,18 +698,21 @@ export const useRunBatch = (sessionId: string) => {
                 target.model !== "cloud" ||
                 !isTranscriptionAuthenticationError(error)
               ) {
-                throw error;
-              }
+                target = await runWithUserFallback(error, target);
+              } else {
+                const refreshedSession = await auth.refreshSession();
+                if (!refreshedSession?.access_token) {
+                  throw error;
+                }
 
-              const refreshedSession = await auth.refreshSession();
-              if (!refreshedSession?.access_token) {
-                throw error;
+                if (!handlePersist) {
+                  resetStagedTranscript();
+                }
+                await run({
+                  ...params,
+                  api_key: refreshedSession.access_token,
+                });
               }
-
-              if (!handlePersist) {
-                resetStagedTranscript();
-              }
-              await run({ ...params, api_key: refreshedSession.access_token });
             }
           }
 

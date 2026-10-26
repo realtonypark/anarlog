@@ -490,6 +490,7 @@ msgstr "Langues parlées supplémentaires"
 msgid "Admin"
 msgstr ""
 
+#: src/settings/ai/shared/fallback-section.tsx
 #: src/settings/ai/shared/index.tsx
 #: src/sidebar/settings-nav-groups.ts
 msgid "Advanced"
@@ -1493,6 +1494,10 @@ msgstr ""
 #: src/settings/ai/llm/configure.tsx
 #: src/settings/ai/stt/configure.tsx
 msgid "Configure Providers"
+msgstr ""
+
+#: src/settings/ai/stt/select.tsx
+msgid "Configure this provider to use it as a fallback."
 msgstr ""
 
 #: src/folders/folder-editor.tsx
@@ -2949,8 +2954,16 @@ msgstr ""
 msgid "If Anarlog stays closed, paste the link in the sign-in window."
 msgstr ""
 
+#: src/settings/ai/stt/select.tsx
+msgid "If batch transcription fails on your provider, it automatically retries on the fallback. Only your own providers are ever used."
+msgstr ""
+
 #: src/settings/referrals.tsx
 msgid "If your friend signed up through your link and started their free trial, but your free month hasn't appeared, email us and we'll help."
+msgstr ""
+
+#: src/settings/ai/llm/select.tsx
+msgid "If your provider fails, requests automatically continue on the fallback. Only your own providers are ever used."
 msgstr ""
 
 #: src/onboarding/index.tsx
@@ -3998,6 +4011,10 @@ msgstr ""
 
 #: src/settings/team/index.tsx
 msgid "No upcoming bots."
+msgstr ""
+
+#: src/settings/ai/shared/fallback-section.tsx
+msgid "None"
 msgstr ""
 
 #: src/settings/stats/insights.tsx
@@ -5170,6 +5187,7 @@ msgid "Select a person to view details"
 msgstr ""
 
 #: src/settings/ai/llm/select.tsx
+#: src/settings/ai/shared/fallback-section.tsx
 #: src/settings/ai/stt/select.tsx
 msgid "Select a provider"
 msgstr ""

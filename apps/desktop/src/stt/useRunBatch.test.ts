@@ -7,6 +7,7 @@ import { BatchResponseProcessingError } from "./batch-response-processing-error"
 import { completeCaptureTranscript } from "./capture-completion";
 import {
   canRunBatchTranscription,
+  classifySttFailure,
   EMPTY_CURRENT_CAPTURE_TRANSCRIPT_ERROR_MESSAGE,
   getBatchFallbackTarget,
   getBatchProvider,
@@ -260,6 +261,34 @@ describe("isTerminalTranscriptionError", () => {
     "STT connection is not available",
   ])("leaves transient failures retryable: %s", (message) => {
     expect(isTerminalTranscriptionError(new Error(message))).toBe(false);
+  });
+});
+
+describe("classifySttFailure", () => {
+  test.each([
+    "402 Payment Required",
+    "403 Forbidden",
+    "Authentication failed: 401 Unauthorized",
+    "credit balance is too low",
+    "insufficient credits",
+  ])("fails over at once on quota and auth failures: %s", (message) => {
+    expect(classifySttFailure(new Error(message))).toBe("failover");
+  });
+
+  test.each([
+    "request timed out",
+    "429 Too Many Requests",
+    "503 Service Unavailable",
+  ])("retries transient failures before failing over: %s", (message) => {
+    expect(classifySttFailure(new Error(message))).toBe("retry");
+  });
+
+  test.each([
+    "Bad Request: failed to process audio: corrupt or unsupported data",
+    "No speech detected",
+    "422 Unprocessable Entity",
+  ])("never fails over on request and audio failures: %s", (message) => {
+    expect(classifySttFailure(new Error(message))).toBe("none");
   });
 });
 

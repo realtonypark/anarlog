@@ -13,9 +13,11 @@ import { useMemo, useRef } from "react";
 
 import type { CharTask } from "@anlg/api-client";
 import type { AIProviderStorage } from "@anlg/store";
+import { toast } from "@anlg/ui/components/ui/toast";
 
 import { createAppleFoundationModel } from "../apple-foundation-model";
 import { createAuthFetch } from "../auth-fetch";
+import { createFallbackMiddleware } from "../fallback";
 import { providerFetch } from "../provider-fetch";
 import {
   normalizeReasoningEffort,
@@ -87,6 +89,15 @@ export const normalizeLLMProviderId = (providerId: string): string =>
 export const useLanguageModel = (task?: CharTask): LanguageModelV3 | null => {
   const { conn } = useLLMConnection();
   const auth = useAuth();
+  const session = auth?.session;
+  const billing = useBillingAccess();
+  const { fallback_llm_provider, fallback_llm_model } = useConfigValues([
+    "fallback_llm_provider",
+    "fallback_llm_model",
+  ] as const);
+  const fallbackProviderConfig = useAiProvider("llm", fallback_llm_provider) as
+    | AIProviderStorage
+    | undefined;
 
   // Auth is resolved at fetch time (not model construction) so token
   // refreshes take effect without recreating the chat transport chain.
@@ -107,8 +118,84 @@ export const useLanguageModel = (task?: CharTask): LanguageModelV3 | null => {
           )
         : undefined;
 
-    return createLanguageModel(conn, task, hostedFetch);
-  }, [conn, task]);
+    const primary = createLanguageModel(conn, task, hostedFetch);
+    const fallbackConn = resolveFallbackConn({
+      fallbackProviderId: fallback_llm_provider,
+      fallbackModelId: fallback_llm_model,
+      fallbackProviderConfig,
+      primary: conn,
+      session,
+      isPaid: billing.isPaid,
+    });
+    if (!fallbackConn) return primary;
+
+    const fallbackModel = createLanguageModel(fallbackConn, task, undefined);
+    const primaryLabel = `${providerLabel(conn.providerId)} ${conn.modelId}`;
+    const fallbackLabel = `${providerLabel(fallbackConn.providerId)} ${fallbackConn.modelId}`;
+    return wrapLanguageModel({
+      model: primary,
+      middleware: [
+        createFallbackMiddleware({
+          fallback: fallbackModel,
+          onFailover: () => {
+            toast.warning("Primary provider failed, using fallback", {
+              description: `${primaryLabel} failed. Using ${fallbackLabel} instead.`,
+            });
+          },
+        }),
+      ],
+    });
+  }, [
+    conn,
+    task,
+    session,
+    billing.isPaid,
+    fallback_llm_provider,
+    fallback_llm_model,
+    fallbackProviderConfig,
+  ]);
+};
+
+const providerLabel = (providerId: string): string =>
+  PROVIDERS.find((provider) => provider.id === providerId)?.displayName ??
+  providerId;
+
+const resolveFallbackConn = (params: {
+  fallbackProviderId: string | undefined;
+  fallbackModelId: string | undefined;
+  fallbackProviderConfig: AIProviderStorage | undefined;
+  primary: LLMConnectionInfo;
+  session: { access_token: string } | null | undefined;
+  isPaid: boolean;
+}): LLMConnectionInfo | null => {
+  const {
+    fallbackProviderId: rawProviderId,
+    fallbackModelId,
+    fallbackProviderConfig,
+    primary,
+    session,
+    isPaid,
+  } = params;
+
+  if (!rawProviderId || !fallbackModelId) return null;
+  const providerId = normalizeLLMProviderId(rawProviderId);
+  if (providerId === "anarlog") return null;
+  if (
+    providerId === primary.providerId &&
+    fallbackModelId === primary.modelId
+  ) {
+    return null;
+  }
+
+  const resolved = resolveLLMConnection({
+    providerId: rawProviderId,
+    modelId: fallbackModelId,
+    reasoningEffort: primary.reasoningEffort,
+    providerConfig: fallbackProviderConfig,
+    session,
+    isPaid,
+  });
+  return resolved.conn;
 };
 
 export const useLLMConnection = (): LLMConnectionResult => {
