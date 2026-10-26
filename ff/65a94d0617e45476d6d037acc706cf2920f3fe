@@ -1,0 +1,250 @@
+apps/desktop/src/ai/fallback.test.ts
+  h_05e5164a29872e 1-201
+apps/desktop/src/ai/fallback.ts
+  h_05e5164a29872e 1-205
+apps/desktop/src/ai/hooks/useLLMConnection.ts
+  h_05e5164a29872e 16,20,92-100,121-198
+apps/desktop/src/i18n/locales/af/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/am/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ar/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/as/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/az/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ba/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/be/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/bg/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/bn/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/bo/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/br/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/bs/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ca/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/cs/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/cy/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/da/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/de/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/el/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/en/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/es/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/et/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/eu/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/fa/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ff/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/fi/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/fo/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/fr/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ga/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/gl/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/gu/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ha/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/he/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/hi/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/hr/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ht/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/hu/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/hy/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/id/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ig/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/is/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/it/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ja/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/jv/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ka/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/kk/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/km/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/kn/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ko/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ku/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ky/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/la/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/lb/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/lg/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ln/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/lo/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/lt/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/lv/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mg/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mi/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mk/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ml/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mn/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mr/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ms/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/mt/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/my/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ne/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/nl/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/nn/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/no/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ny/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/oc/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/or/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/pa/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/pl/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ps/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/pt/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ro/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ru/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sa/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sd/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/si/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sk/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sl/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sn/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/so/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sq/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sr/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/su/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sv/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/sw/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ta/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/te/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/tg/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/th/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/tk/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/tl/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/tr/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/tt/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/uk/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/ur/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/uz/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/vi/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/wo/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/xh/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/yi/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/yo/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/zh/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/i18n/locales/zu/messages.po
+  h_05e5164a29872e 493,1499-1502,2961-2964,2969-2972,4025-4028,5209
+apps/desktop/src/settings/ai/llm/select.tsx
+  h_05e5164a29872e 45-48,110-111,116-117,379-454,585-610
+apps/desktop/src/settings/ai/shared/fallback-section.tsx
+  h_05e5164a29872e 1-98
+apps/desktop/src/settings/ai/stt/select.tsx
+  h_05e5164a29872e 75-78,111-116,119-120,265-318,488-545
+apps/desktop/src/settings/schema.ts
+  h_05e5164a29872e 332-339,353-360
+apps/desktop/src/stt/useRunBatch.test.ts
+  h_05e5164a29872e 10,267-294
+apps/desktop/src/stt/useRunBatch.ts
+  h_05e5164a29872e 15,21,33,287-337,383-384,451,463,470,632-684,701-714
+apps/desktop/src/stt/useSTTConnection.ts
+  h_05e5164a29872e 22-68,214-215,217-218,227
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff65a94d0617e45476d6d037acc706cf2920f3fe",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
