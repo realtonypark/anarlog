@@ -1,0 +1,16 @@
+apps/desktop/src/chat/components/persistent-chat.test.tsx
+  h_05e5164a29872e 49,106
+apps/desktop/src/chat/components/persistent-chat.tsx
+  h_05e5164a29872e 171,185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5e057750095c6e4d37a41e6273a1e16ee9b26702",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
