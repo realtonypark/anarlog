@@ -1,11 +1,9 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { usePrevious } from "@uidotdev/usehooks";
 import {
   type CSSProperties,
   forwardRef,
   memo,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
@@ -51,26 +49,10 @@ export const TitleInput = forwardRef<
       state: { view },
     } = tab;
     const isGenerating = useTitleGenerating(sessionId);
-    const wasGenerating = usePrevious(isGenerating);
-    const [showRevealAnimation, setShowRevealAnimation] = useState(false);
-    const [generatedTitle, setGeneratedTitle] = useState<string | null>(null);
-    const storeTitle = useSession(sessionId)?.title;
-
     const editorId = view ? "active" : "inactive";
     const inputRef = useRef<TitleInputHandle>(null);
 
     useImperativeHandle(ref, () => inputRef.current!, []);
-
-    useEffect(() => {
-      if (wasGenerating && !isGenerating) {
-        setGeneratedTitle(storeTitle ?? null);
-        setShowRevealAnimation(true);
-        const timer = setTimeout(() => {
-          setShowRevealAnimation(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-      }
-    }, [wasGenerating, isGenerating, storeTitle]);
 
     if (isGenerating) {
       return (
@@ -90,29 +72,6 @@ export const TitleInput = forwardRef<
             ])}
           >
             <Trans>Generating title...</Trans>
-          </span>
-        </div>
-      );
-    }
-
-    if (showRevealAnimation && generatedTitle) {
-      return (
-        <div
-          data-tauri-drag-region="false"
-          className={cn([
-            "flex w-full items-center justify-start overflow-hidden",
-            variant === "breadcrumb" ? "h-5" : "h-8",
-          ])}
-        >
-          <span
-            className={cn([
-              "animate-reveal-left whitespace-nowrap",
-              variant === "breadcrumb"
-                ? "text-sm leading-5"
-                : "text-xl font-semibold",
-            ])}
-          >
-            {generatedTitle}
           </span>
         </div>
       );

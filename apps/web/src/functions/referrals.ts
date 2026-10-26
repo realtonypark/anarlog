@@ -17,10 +17,11 @@ const REFERRAL_COOKIE = "anarlog-referral";
 const REFERRAL_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const referralCodeSchema = z.string().regex(/^[a-f0-9]{24}$/);
 
+import { proTrialDaysForOffer } from "@anlg/pricing/trial";
 import type { ReferralSummary } from "@anlg/supabase/referrals";
 
 export const persistReferralAttribution = createServerFn({ method: "POST" })
-  .inputValidator(referralCodeSchema)
+  .validator(referralCodeSchema)
   .handler(async ({ data: code }) => {
     setPrivateResponseHeaders();
     const supabase = getSupabaseServerClient();
@@ -103,13 +104,15 @@ export const claimPendingReferral = createServerOnlyFn(
   },
 );
 
-export const getReferralTrialDays = createServerOnlyFn(
+export const getProTrialDays = createServerOnlyFn(
   async (supabase: SupabaseClient) => {
-    const { data, error } = await supabase.rpc("get_referral_trial_days");
+    const { data, error } = await supabase.rpc("get_pro_trial_offer");
     if (error) {
       throw error;
     }
-    return typeof data === "number" ? data : null;
+    return proTrialDaysForOffer(
+      data === "referral" || data === "work_email" ? data : "personal_email",
+    );
   },
 );
 

@@ -20,6 +20,38 @@ struct SyncActivity {
     error: Option<String>,
 }
 
+/// Server strings are untrusted even when short; only known classifications
+/// and a typed retry flag may leave the process through logging.
+#[derive(Debug, Default, Eq, PartialEq)]
+pub(super) struct LoggedFailure {
+    pub(super) code: Option<&'static str>,
+    pub(super) stage: Option<&'static str>,
+    pub(super) retryable: Option<bool>,
+}
+
+pub(super) fn logged_failure(failure: Option<&serde_json::Value>) -> LoggedFailure {
+    let Some(failure) = failure else {
+        return LoggedFailure::default();
+    };
+    LoggedFailure {
+        code: match failure.get("code").and_then(serde_json::Value::as_str) {
+            Some("apply_conflict") => Some("apply_conflict"),
+            Some("check_failed") => Some("check_failed"),
+            Some(_) => Some("unknown"),
+            None => None,
+        },
+        stage: match failure.get("stage").and_then(serde_json::Value::as_str) {
+            Some("apply") => Some("apply"),
+            Some("check") => Some("check"),
+            Some(_) => Some("unknown"),
+            None => None,
+        },
+        retryable: failure
+            .get("retryable")
+            .and_then(serde_json::Value::as_bool),
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum SyncLogLevel {
     Info,
@@ -154,12 +186,25 @@ fn log_sync_result(
     failures: u32,
 ) {
     if activity.status == CloudsyncActivityStatus::Failed {
+        let send_failure = logged_failure(
+            result
+                .send
+                .as_ref()
+                .and_then(|send| send.last_failure.as_ref()),
+        );
+        let receive_failure = logged_failure(
+            result
+                .receive
+                .as_ref()
+                .and_then(|receive| receive.last_failure.as_ref()),
+        );
         tracing::warn!(
             trigger = ?activity.trigger,
             send_failed = result.send.as_ref().is_some_and(|send| {
                 send.last_failure.is_some()
                     || (!send.status.eq_ignore_ascii_case("synced")
-                        && !send.status.eq_ignore_ascii_case("syncing"))
+                        && !send.status.eq_ignore_ascii_case("syncing")
+                        && !send.status.eq_ignore_ascii_case("out-of-sync"))
             }),
             receive_failed = result.receive.as_ref().is_some_and(|receive| {
                 receive.error.is_some() || receive.last_failure.is_some()
@@ -167,6 +212,12 @@ fn log_sync_result(
             error_kind = ?activity.error.as_deref().map(|error| {
                 anlg_cloudsync::Error::Io(std::io::Error::other(error)).kind()
             }),
+            send_failure_code = ?send_failure.code,
+            send_failure_stage = ?send_failure.stage,
+            send_failure_retryable = ?send_failure.retryable,
+            receive_failure_code = ?receive_failure.code,
+            receive_failure_stage = ?receive_failure.stage,
+            receive_failure_retryable = ?receive_failure.retryable,
             failures,
             sent_bytes = activity.sent_bytes,
             received_bytes = activity.received_bytes,
@@ -248,6 +299,7 @@ fn embedded_sync_error(result: &CloudsyncNetworkResult) -> Option<String> {
     if let Some(send) = &result.send {
         if !send.status.eq_ignore_ascii_case("synced")
             && !send.status.eq_ignore_ascii_case("syncing")
+            && !send.status.eq_ignore_ascii_case("out-of-sync")
         {
             errors.push(format!("send status: {}", send.status));
         }

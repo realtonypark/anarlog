@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "NODE_OPTIONS='--max-old-space-size=8192' VITE_APP_URL=\"http://localhost:3000\" VITE_API_URL=\"http://localhost:3001\" dotenvx run --ignore MISSING_ENV_FILE -f ../../.env.supabase -f .env -- vite dev --port 3000",
     "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build && node scripts/finalize-build.mjs",
-    "media:napkin": "node scripts/napkin-to-supabase.mjs",
+    "media:napkin": "node scripts/napkin-figure.mjs",
     "media:figures": "node scripts/napkin-batch.mjs",
     "media:figures:check": "node scripts/napkin-batch.mjs --check && node scripts/static-media-check.mjs",
     "deploy:workspace-share-router": "wrangler deploy --config wrangler.workspace-share.jsonc",
@@ -36,11 +36,13 @@
     "@supabase/supabase-js": "^2.103.0",
     "@t3-oss/env-core": "^0.13.11",
     "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/history": "1.162.5",
     "@tanstack/react-form": "^1.29.0",
-    "@tanstack/react-query": "^5.99.0",
-    "@tanstack/react-router": "^1.168.19",
-    "@tanstack/react-router-ssr-query": "^1.166.11",
-    "@tanstack/react-start": "^1.167.33",
+    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-router": "^1.170.45",
+    "@tanstack/react-router-ssr-query": "1.167.3",
+    "@tanstack/react-start": "^1.169.3",
+    "@tanstack/router-core": "1.171.38",
     "@unpic/react": "^1.0.2",
     "jwt-decode": "^4.0.0",
     "lib0": "0.2.118",
@@ -63,7 +65,7 @@
     "vaul": "^1.1.2",
     "y-protocols": "1.0.7",
     "yjs": "13.6.32",
-    "zod": "^4.5.4"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@content-collections/core": "^0.15.0",
@@ -76,6 +78,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "aws4fetch": "^1.0.20",
     "js-yaml": "^5.4.1",
     "jsdom": "^27.4.0",
     "nf3": "0.3.24",
@@ -83,7 +86,7 @@
     "pagefind": "^1.5.2",
     "tanstack-router-sitemap": "^1.0.13",
     "typescript": "^5.9.3",
-    "vite": "^8.0.16",
+    "vite": "^8.1.6",
     "wrangler": "4.129.0"
   }
 }

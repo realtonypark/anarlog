@@ -9,10 +9,7 @@ import { createClient } from "@anlg/api-client/client";
 import { env, requireEnv } from "@/env";
 import { getRequestAppOrigin } from "@/functions/app-origin";
 import { desktopSchemeSchema } from "@/functions/desktop-flow";
-import {
-  claimPendingReferral,
-  getReferralTrialDays,
-} from "@/functions/referrals";
+import { claimPendingReferral, getProTrialDays } from "@/functions/referrals";
 import { getStripeClient } from "@/functions/stripe";
 import {
   getSupabaseAdminClient,
@@ -501,7 +498,7 @@ const createCheckoutSessionInput = z.object({
 });
 
 export const createCheckoutSession = createServerFn({ method: "POST" })
-  .inputValidator(createCheckoutSessionInput)
+  .validator(createCheckoutSessionInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {
@@ -534,10 +531,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         throw new Error("Trial is not available for this account");
       }
       reservationId = parsedReservationId.data;
-      trialDays = (await getReferralTrialDays(supabase)) ?? undefined;
     }
 
     try {
+      if (reservationId) {
+        trialDays = await getProTrialDays(supabase);
+      }
       const stripe = getStripeClient();
       const checkoutCode =
         !data.trial && data.code ? data.code.trim() : undefined;
@@ -679,7 +678,7 @@ const createTeamCheckoutSessionInput = z.object({
 });
 
 export const createTeamCheckoutSession = createServerFn({ method: "POST" })
-  .inputValidator(createTeamCheckoutSessionInput)
+  .validator(createTeamCheckoutSessionInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {
@@ -871,7 +870,7 @@ const createPlanSwitchSessionInput = z.object({
 });
 
 export const createPlanSwitchSession = createServerFn({ method: "POST" })
-  .inputValidator(createPlanSwitchSessionInput)
+  .validator(createPlanSwitchSessionInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {
@@ -965,7 +964,7 @@ const createPortalSessionInput = z.object({
 });
 
 export const createPortalSession = createServerFn({ method: "POST" })
-  .inputValidator(createPortalSessionInput)
+  .validator(createPortalSessionInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {
@@ -1126,7 +1125,7 @@ const updateSyncDeviceAddonInput = z.object({
 });
 
 export const updateSyncDeviceAddon = createServerFn({ method: "POST" })
-  .inputValidator(updateSyncDeviceAddonInput)
+  .validator(updateSyncDeviceAddonInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {
@@ -1196,7 +1195,7 @@ const deleteAccountInput = z.object({
 });
 
 export const deleteAccount = createServerFn({ method: "POST" })
-  .inputValidator(deleteAccountInput)
+  .validator(deleteAccountInput)
   .handler(async ({ data }) => {
     const supabase = getSupabaseServerClient();
     const {

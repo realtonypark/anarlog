@@ -39,7 +39,7 @@ I rechecked the current product docs, pricing, capture modes, and privacy pages 
 | Otter | Bot, desktop, or Chrome | Otter workspace | Familiar collaborative transcripts | 300 minutes/month |
 | Sembly | Bot for live Meet calls | Sembly workspace | Branded client deliverables for consultancies and agencies | Free trial |
 
-![Four Google Meet AI note-taking capture paths: native, bot, browser extension, and desktop audio](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/google-meet-capture-paths.png)
+![Four Google Meet AI note-taking capture paths: native, bot, browser extension, and desktop audio](anarlog/blog/articles/best-ai-notetakers-google-meet/google-meet-capture-paths.png)
 
 Capture architecture decides who runs the recorder, whether it can attend alone, and where the meeting record lands.
 
@@ -47,7 +47,7 @@ Capture architecture decides who runs the recorder, whether it can attend alone,
 
 Google's own [Take notes for me](https://support.google.com/meet/answer/14754931) is now the cleanest default for eligible Workspace users. It runs inside Meet, creates a structured Google Doc, saves that document to Drive, and attaches it to the Calendar event. There is no third-party bot to admit.
 
-![Google Meet settings for Take notes for me, recording, and transcripts](https://static.anarlog.so/blog/library/products/google-meet/take-notes-for-me/2026-08-30-settings.gif)
+![Google Meet settings for Take notes for me, recording, and transcripts](anarlog/blog/library/products/google-meet/take-notes-for-me/2026-08-30-settings.gif)
 
 *Google's current Meet UI exposes notes, recording, and transcripts as separate meeting records. Source: [Google Meet Help](https://support.google.com/meet/answer/14754931).*
 
@@ -55,19 +55,21 @@ Hosts can choose who receives the notes and request a longer format. They can al
 
 The constraint is the ecosystem. The output is a Google Doc governed by Drive sharing and Meet retention settings. Audio must use one of eight supported languages at a time, and eligibility depends on specific Workspace editions or Google AI Pro/Ultra. If that is already how your company works, the integration is hard to beat. If you want a portable local meeting archive, it is the wrong architecture.
 
-Take notes for me is not the only native AI capability now. [Ask Gemini in Meet](https://support.google.com/meet/answer/16024610) runs alongside it on the same eligible plans and does a different job: any participant can privately ask a question during the live call, such as what was just decided or what they missed by joining late, and Gemini answers from the live captions, Workspace files the user can already see, and public search results. It does not record the meeting or keep the conversation after the call ends, and only the person who asked can see the answer. Use Take notes for me for a shareable record after the meeting, and Ask Gemini for a private answer during it.
+[Ask Gemini in Meet](https://support.google.com/meet/answer/16024610) serves a different purpose: private questions during the live call. It can recap discussion from before you joined only if Take notes for me was already running. Check [Google's feature table](https://support.google.com/meet/answer/13952129) for each feature's eligibility rather than assuming the plans are identical.
 
-**Pricing:** Included with eligible Business Standard, Business Plus, Enterprise Standard, Enterprise Plus, Frontline Plus, Google AI Pro, and Google AI Ultra plans. [Google's plan table](https://support.google.com/meet/answer/13952129) is the reliable place to check eligibility.
+Google says Ask Gemini does not create a meeting recording or retain caption data after the call. However, its guide also says prompts and responses are saved in Conversation History. Private answers are not a promise that no conversation history is retained.
+
+**Take notes for me availability:** Included with eligible Business Standard, Business Plus, Enterprise Standard, Enterprise Plus, Frontline Plus, Google AI Pro, and Google AI Ultra plans. [Google's plan table](https://support.google.com/meet/answer/13952129) is the reliable place to check eligibility. For organizer requirements, sharing controls, and where the Doc is saved, use our [Gemini meeting-notes setup guide](/blog/google-gemini-meeting-notes/).
 
 ## 2. Anarlog: best for local control
 
 [Anarlog](https://anarlog.so) captures microphone and system audio on your computer. It does not join Google Meet or need Calendar access to record, and it keeps canonical notes, transcripts, and meeting metadata in local SQLite.
 
-![Anarlog meeting summary with notes, transcript, and speaker labels](https://static.anarlog.so/blog/library/products/anarlog/desktop/2026-08-20-meeting-summary.jpg)
+![Anarlog meeting summary with notes, transcript, and speaker labels](anarlog/blog/library/products/anarlog/desktop/2026-08-20-meeting-summary.jpg)
 
 The difference runs deeper than "bot-free". Tactiq, Krisp, Otter, Fireflies, and tl;dv all have a bot-free path now. Anarlog's sharper advantage is control over the full stack: local data, local or cloud transcription, your choice of language model, portable exports, and an MIT-licensed desktop client your team can audit.
 
-That control adds decisions. The free path works best for people comfortable choosing local models or adding their own API keys. The managed Pro path removes most of that setup, but hosted transcription and AI still create explicit cloud data paths. Only the local-only configuration keeps the full workflow on the device.
+That control adds decisions. The free path works best for people comfortable choosing local models or adding their own API keys. The managed Pro path removes most of that setup, but hosted transcription and AI still create explicit cloud data paths. Only the local-only configuration keeps the full workflow on the device. Follow the [offline setup guide](/blog/offline-meeting-transcription-mac/) to configure local speech and summaries separately.
 
 macOS is the mature build. Windows and Linux builds are available in beta. Anarlog records Google Meet, Zoom, Teams, phone calls, and in-person conversations through the same desktop workflow, but it does not record meeting video.
 
@@ -77,7 +79,7 @@ macOS is the mature build. Windows and Linux builds are available in beta. Anarl
 
 [Fireflies](https://fireflies.ai/) is no longer bot-only. You can still invite Fred or let it auto-join Calendar events, but its Chrome extension can also capture Google Meet without adding a participant.
 
-![Fireflies meeting workspace with video, transcript, summary, and integrations](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/image-2-2.png)
+![Fireflies meeting workspace with video, transcript, summary, and integrations](anarlog/blog/library/products/fireflies/meeting-summary/2026-08-27-meeting-workspace.webp)
 
 *Fireflies organizes playback, transcript, summary, and integrations in one cloud workspace. Source: [Fireflies](https://fireflies.ai/).*
 
@@ -91,7 +93,7 @@ The tradeoff is a vendor-hosted meeting workspace. Fireflies publishes SOC 2 Typ
 
 [tl;dv](https://tldv.io/google-meet/) gives Google Meet users two distinct capture modes. Its Chrome extension can send a bot that records audio and video, while the desktop app captures device audio without adding a bot. The bot-free mode does not include video recording.
 
-![tl;dv coaching dashboard with speaker insights and meeting playback](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/image-4-2.png)
+![tl;dv coaching dashboard with speaker insights and meeting playback](anarlog/blog/library/products/tldv/coaching/2026-08-27-speaker-insights.webp)
 
 *tl;dv combines recordings with speaker analytics, coaching, and meeting playback. Source: [tl;dv for Google Meet](https://tldv.io/google-meet/).*
 
@@ -105,7 +107,7 @@ Its free tier is unusually usable: unlimited recordings and transcription, with 
 
 [Tactiq](https://tactiq.io/) is the least invasive option in this list if you live in Chrome and only need text. The extension opens a widget beside Google Meet and transcribes in real time without adding a participant. Current Tactiq documentation says you do not need to enable Meet captions first.
 
-![Tactiq live transcript panel beside a Google Meet call](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/image-5-2.png)
+![Tactiq live transcript panel beside a Google Meet call](anarlog/blog/library/products/tactiq/google-meet/2026-08-27-live-transcript.webp)
 
 *Tactiq keeps the transcript visible beside the call without adding a bot. Source: [Tactiq Google Meet guide](https://help.tactiq.io/en/articles/9535734-how-to-use-tactiq-with-google-meet-meetings).*
 
@@ -119,7 +121,7 @@ The language story needs careful wording. Tactiq markets 60+ languages, while it
 
 [Krisp](https://krisp.ai/ai-meeting-assistant/google-meet/) sits at the desktop audio layer. Select Krisp as the microphone and speaker in Google Meet, then enable its note taker. The same layer can remove noise and echoes while it transcribes. Krisp also offers optional bot capture when automated participation is more useful.
 
-![Krisp meeting summary with action items and transcript navigation](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/image-6-2.png)
+![Krisp meeting summary with action items and transcript navigation](anarlog/blog/articles/best-ai-notetakers-google-meet/image-6-2.png)
 
 *Krisp combines meeting notes with its audio-processing workflow. Source: [Krisp for Google Meet](https://krisp.ai/ai-meeting-assistant/google-meet/).*
 
@@ -135,7 +137,7 @@ Krisp now sits between two paid tiers instead of one. Core covers the note-takin
 
 [Otter](https://otter.ai/googlemeet) now offers both visible and bot-free Google Meet workflows. You can send AI Notetaker as a normal participant, record from the Chrome extension, or use the desktop app to capture on your device.
 
-![Otter AI Notetaker calendar controls, visible meeting participant, and transcript workspace](https://static.anarlog.so/blog/library/products/otter/notetaker/2026-07-17-notetaker-overview.png)
+![Otter AI Notetaker calendar controls, visible meeting participant, and transcript workspace](anarlog/blog/library/products/otter/notetaker/2026-07-17-notetaker-overview.png)
 
 *Otter supports scheduled AI Notetaker attendance as well as device capture. Source: [Otter Google Meet guide](https://otter.ai/googlemeet).*
 
@@ -149,7 +151,7 @@ The privacy model is cloud-first. Otter states that it de-identifies user data b
 
 [Sembly](https://www.sembly.ai/) sends an agent into live Google Meet calls. It can join even when you are absent, transcribe the meeting, extract decisions and tasks, and turn the conversation into documents such as project plans or requirements.
 
-![Sembly meeting note with tasks, summary, and transcript](https://static.anarlog.so/blog/articles/best-ai-notetakers-google-meet/image-3-2.png)
+![Sembly meeting note with tasks, summary, and transcript](anarlog/blog/library/products/sembly/meeting-notes/2026-08-27-tasks-summary.webp)
 
 *Sembly organizes the transcript around tasks, decisions, and structured meeting notes. Source: [Sembly](https://www.sembly.ai/).*
 
@@ -209,4 +211,4 @@ Yes. A hidden participant is still recording or transcription. Google Workspace 
 
 ### What is Ask Gemini in Meet, and how is it different from Take notes for me?
 
-They are two separate native features on the same eligible Workspace plans. [Take notes for me](https://support.google.com/meet/answer/14754931) generates a shared Google Doc after the meeting. [Ask Gemini in Meet](https://support.google.com/meet/answer/16024610) answers private, in-the-moment questions during the call, such as a recap of what you missed, and does not save the conversation or create a recording once the meeting ends.
+Take notes for me creates a shareable Google Doc. [Ask Gemini](https://support.google.com/meet/answer/16024610) provides private in-call answers without creating a recording or keeping caption data after the call, but Google says prompts and responses are saved in Conversation History. Check eligibility separately for the two features.

@@ -19,7 +19,6 @@ export {
   parseYouTubeClipId,
   parseYouTubeEmbedSnippet,
   parseYouTubeUrl,
-  resolveYouTubeClipUrl,
 } from "./clip-paste";
 export { type FileHandlerConfig, fileHandlerPlugin } from "./file-handler";
 export { findHashtags, hashtagPlugin, hashtagPluginKey } from "./hashtag";

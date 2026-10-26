@@ -469,6 +469,103 @@ async fn populated_table_init_interrupt_drains_before_local_write() {
         "immediate local write remained blocked after native CloudSync table initialization interruption",
     )
     .unwrap();
+    assert!(tracking_schema(&db).await.is_empty());
+    db.cloudsync_init("items", None, None).await.unwrap();
+    let before: i64 = sqlx::query_scalar("SELECT count(*) FROM items_cloudsync")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO items (id, value) VALUES ('after-retry', 'local')")
+        .execute(db.pool())
+        .await
+        .expect("local write failed after retrying interrupted table initialization");
+    let after: i64 = sqlx::query_scalar("SELECT count(*) FROM items_cloudsync")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+    assert!(
+        after > before,
+        "retried initialization did not track the new row"
+    );
+}
+
+#[cfg(any(
+    target_os = "macos",
+    target_os = "linux",
+    target_os = "windows",
+    target_os = "ios"
+))]
+#[tokio::test]
+async fn aborted_table_init_releases_transaction_before_other_connection_writes() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("app.db");
+    let db = Arc::new(
+        Db::open(crate::DbOpenOptions {
+            storage: crate::DbStorage::Local(&path),
+            cloudsync_enabled: true,
+            journal_mode_wal: true,
+            foreign_keys: true,
+            max_connections: Some(3),
+        })
+        .await
+        .unwrap(),
+    );
+    sqlx::raw_sql(
+        "CREATE TABLE items (id TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL DEFAULT '');
+        WITH RECURSIVE rows(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM rows WHERE id < 100000)
+        INSERT INTO items SELECT printf('item-%d', id), 'value' FROM rows;",
+    )
+    .execute(db.pool())
+    .await
+    .unwrap();
+    sqlx::query("CREATE TABLE local_writes (id TEXT PRIMARY KEY)")
+        .execute(db.pool())
+        .await
+        .unwrap();
+    let mut other = db.pool().acquire().await.unwrap();
+    let request_db = Arc::clone(&db);
+    let request = tokio::spawn(async move { request_db.cloudsync_init("items", None, None).await });
+    tokio::time::timeout(LIVENESS_TIMEOUT, async {
+        while !db.cloudsync_interrupt_registered() {
+            assert!(!request.is_finished());
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    request.abort();
+    assert!(request.await.unwrap_err().is_cancelled());
+    tokio::time::timeout(LIVENESS_TIMEOUT, db.cloudsync_version())
+        .await
+        .unwrap()
+        .unwrap();
+    tokio::time::timeout(
+        LIVENESS_TIMEOUT,
+        sqlx::query("INSERT INTO items VALUES ('after-abort', 'local')").execute(&mut *other),
+    )
+    .await
+    .expect("aborted initialization retained a write lock")
+    .unwrap();
+    {
+        let mut pinned = db.cloudsync_connection.lock().await;
+        sqlx::query("INSERT INTO local_writes VALUES ('committed')")
+            .execute(&mut **pinned.as_mut().unwrap())
+            .await
+            .unwrap();
+    }
+    let committed: i64 = sqlx::query_scalar("SELECT count(*) FROM local_writes")
+        .fetch_one(&mut *other)
+        .await
+        .unwrap();
+    assert_eq!(
+        committed, 1,
+        "pinned connection kept subsequent writes uncommitted"
+    );
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM items WHERE id = 'after-abort'")
+        .fetch_one(db.pool())
+        .await
+        .unwrap();
+    assert_eq!(count, 1);
 }
 
 #[cfg(any(

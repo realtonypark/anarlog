@@ -849,3 +849,44 @@ describe("browser-safe editor controls", () => {
     expect(rendered.queryByText("Commands")).toBeNull();
   });
 });
+
+it("keeps a pasted YouTube Shorts URL visible and editable instead of replacing it with a blank clip", async () => {
+  let view: EditorView | null = null;
+  const url = "https://www.youtube.com/shorts/515J0QD9p6w";
+  render(
+    createElement(NoteEditor, {
+      initialContent: { type: "doc", content: [{ type: "paragraph" }] },
+      onViewReady: (nextView) => {
+        view = nextView;
+      },
+    }),
+  );
+  await waitFor(() => expect(view).not.toBeNull());
+  act(() => {
+    const event = new Event("paste") as ClipboardEvent;
+    Object.defineProperty(event, "clipboardData", {
+      value: {
+        getData: (type: string) => (type === "text/plain" ? url : ""),
+      },
+    });
+    view!.pasteText(url, event);
+  });
+  expect(view!.state.doc.textContent).toBe(url);
+  expect(screen.getByRole("link", { name: url }).getAttribute("href")).toBe(
+    url,
+  );
+});
+
+it("shows a link when reopening an existing YouTube clip", async () => {
+  const src = "https://www.youtube.com/embed/515J0QD9p6w";
+  render(
+    createElement(NoteEditor, {
+      initialContent: {
+        type: "doc",
+        content: [{ type: "clip", attrs: { src } }],
+      },
+    }),
+  );
+  const link = await screen.findByRole("link", { name: src });
+  expect(link.getAttribute("href")).toBe(src);
+});
