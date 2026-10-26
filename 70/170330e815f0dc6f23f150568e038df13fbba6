@@ -1,0 +1,18 @@
+apps/desktop/src/settings/ai/llm/select.tsx
+  h_05e5164a29872e 594,597
+apps/desktop/src/settings/ai/shared/fallback-section.tsx
+  h_05e5164a29872e 2,15,34,42,45-47,49-65,102-103,105-106
+apps/desktop/src/settings/ai/stt/select.tsx
+  h_05e5164a29872e 497,516-518
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "70170330e815f0dc6f23f150568e038df13fbba6",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
