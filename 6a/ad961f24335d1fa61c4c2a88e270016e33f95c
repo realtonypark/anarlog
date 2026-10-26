@@ -1,0 +1,30 @@
+apps/desktop/src/main/empty.test.tsx
+  h_05e5164a29872e 1-7,13-17,54-64,73-75,95-147
+apps/desktop/src/main/empty.tsx
+  h_05e5164a29872e 8,31,39-42,44-60,62
+apps/desktop/src/session/components/note-input/audio-drop-target.tsx
+  h_05e5164a29872e 3,34,36-41
+apps/desktop/src/session/components/note-input/enhanced/editor.tsx
+  h_05e5164a29872e 12-13,146-148,150-179,184-196
+apps/desktop/src/session/components/note-input/file-handler.ts
+  h_05e5164a29872e 21-22,67-69,72-79,84,88-89,92-93,95,100-104,107,109,114-117,123-125,128,133-134,138-145,147-158,160-170,173,179,186,192-194,196,249,264
+apps/desktop/src/session/components/note-input/markdown-import.test.ts
+  h_05e5164a29872e 32-38,43-45,52-59
+apps/desktop/src/session/components/note-input/markdown-import.ts
+  h_05e5164a29872e 1-7,16-48,50
+apps/desktop/src/session/components/note-input/raw.tsx
+  h_05e5164a29872e 16,18,305-307,309-360
+apps/desktop/src/sidebar/index.tsx
+  h_05e5164a29872e 17,35,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6aad961f24335d1fa61c4c2a88e270016e33f95c",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
