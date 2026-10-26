@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   Select,
@@ -12,7 +12,7 @@ import { cn } from "@anlg/utils";
 
 import { ProviderIconSlot } from "./index";
 
-import { SettingRow } from "~/settings/setting-row";
+import { SettingSwitchRow } from "~/settings/setting-row";
 
 export const FALLBACK_NONE_VALUE = "none";
 
@@ -31,6 +31,7 @@ export function FallbackRow({
   providerValue,
   providerOptions,
   onProviderChange,
+  onDisable,
   modelPicker,
 }: {
   title: ReactNode;
@@ -38,18 +39,30 @@ export function FallbackRow({
   providerValue: string;
   providerOptions: FallbackProviderOption[];
   onProviderChange: (provider: string) => void;
+  onDisable: () => void;
   modelPicker: ReactNode;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const open = expanded || providerValue !== "";
+
   return (
-    <SettingRow title={title} description={description} controlWidth="content">
-      {(labelProps) => (
-        <div
-          role="group"
-          aria-labelledby={labelProps["aria-labelledby"]}
-          aria-describedby={labelProps["aria-describedby"]}
-          className="flex w-[26rem] max-w-full items-center gap-2"
-        >
-          <div className="min-w-0 flex-1">
+    <div className="flex flex-col gap-4">
+      <SettingSwitchRow
+        title={title}
+        description={description}
+        checked={open}
+        onChange={(checked) => {
+          if (checked) {
+            setExpanded(true);
+          } else {
+            setExpanded(false);
+            onDisable();
+          }
+        }}
+      />
+      {open ? (
+        <div className="flex flex-row items-center gap-4">
+          <div className="min-w-0 flex-2">
             <Select value={providerValue} onValueChange={onProviderChange}>
               <SelectTrigger className="bg-card shadow-none">
                 <SelectValue placeholder={<Trans>Select a provider</Trans>} />
@@ -86,9 +99,10 @@ export function FallbackRow({
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-0 flex-[1.5]">{modelPicker}</div>
+          <span className="text-muted-foreground">/</span>
+          <div className="min-w-0 flex-3">{modelPicker}</div>
         </div>
-      )}
-    </SettingRow>
+      ) : null}
+    </div>
   );
 }

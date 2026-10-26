@@ -494,7 +494,7 @@ export function SelectProviderAndModel() {
             retries on the fallback.
           </Trans>
         }
-        providerValue={fallback_stt_provider || FALLBACK_NONE_VALUE}
+        providerValue={fallback_stt_provider || ""}
         providerOptions={fallbackProviderOptions.map((provider) => {
           const configured =
             configuredProviders[provider.id as ProviderId]?.configured ?? false;
@@ -513,6 +513,9 @@ export function SelectProviderAndModel() {
           };
         })}
         onProviderChange={handleFallbackProviderChange}
+        onDisable={() =>
+          setSelection({ fallback_stt_provider: "", fallback_stt_model: "" })
+        }
         modelPicker={
           fallback_stt_provider === "custom" ? (
             <Input

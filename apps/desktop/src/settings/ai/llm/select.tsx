@@ -591,9 +591,10 @@ export function SelectProviderAndModel() {
             fallback.
           </Trans>
         }
-        providerValue={fallback_llm_provider || FALLBACK_NONE_VALUE}
+        providerValue={fallback_llm_provider || ""}
         providerOptions={fallbackProviderOptions}
         onProviderChange={handleFallbackProviderChange}
+        onDisable={() => persistFallbackSelection("", "")}
         modelPicker={
           <ModelCombobox
             providerId={fallback_llm_provider || ""}
