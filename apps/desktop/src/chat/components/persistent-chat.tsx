@@ -42,7 +42,6 @@ export function PersistentChatPanel({
 
   const [containerRect, setContainerRect] =
     useState<FloatingContainerRect | null>(null);
-  const [draftHasContent, setDraftHasContent] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const getActiveContainer = () => {
@@ -169,21 +168,12 @@ export function PersistentChatPanel({
         <div
           data-chat-floating-frame
           className={cn([
-            "pointer-events-auto relative flex h-full min-h-0",
+            "pointer-events-none relative flex h-full min-h-0",
             "items-end justify-center px-[11px]",
           ])}
           style={{
             paddingTop: FLOATING_PANEL_TOP_CLEARANCE,
             paddingBottom: containerRect?.bottomInset ?? 7,
-          }}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              if (draftHasContent) {
-                return;
-              }
-
-              chat.sendEvent({ type: "CLOSE" });
-            }
           }}
         >
           <motion.div
@@ -192,7 +182,7 @@ export function PersistentChatPanel({
             data-chat-panel-reveal="wrap"
             data-chat-size="floating"
             className={cn([
-              "relative flex min-h-0 flex-col overflow-hidden",
+              "pointer-events-auto relative flex min-h-0 flex-col overflow-hidden",
               chatFloatingPanelShellClassNames(),
             ])}
             style={panelStyle}
@@ -207,7 +197,6 @@ export function PersistentChatPanel({
             <ChatPanelFrame
               key={sessionProps?.sessionId}
               layout="floating"
-              onDraftContentChange={setDraftHasContent}
               onOpenRightPanel={() =>
                 chat.sendEvent({ type: "OPEN_RIGHT_PANEL" })
               }
