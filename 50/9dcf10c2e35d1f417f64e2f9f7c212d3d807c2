@@ -1,0 +1,14 @@
+apps/desktop/src/stt/useRunBatch.ts
+  h_05e5164a29872e 327-336
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "509dcf10c2e35d1f417f64e2f9f7c212d3d807c2",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
