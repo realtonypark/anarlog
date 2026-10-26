@@ -2959,7 +2959,7 @@ msgid "If Anarlog stays closed, paste the link in the sign-in window."
 msgstr ""
 
 #: src/settings/ai/stt/select.tsx
-msgid "If batch transcription fails on your provider, it automatically retries on the fallback. Only your own providers are ever used."
+msgid "If batch transcription fails on your provider, it automatically retries on the fallback."
 msgstr ""
 
 #: src/settings/referrals.tsx
@@ -2967,7 +2967,7 @@ msgid "If your friend signed up through your link and started their free trial, 
 msgstr ""
 
 #: src/settings/ai/llm/select.tsx
-msgid "If your provider fails, requests automatically continue on the fallback. Only your own providers are ever used."
+msgid "If your provider fails, requests automatically continue on the fallback."
 msgstr ""
 
 #: src/onboarding/index.tsx

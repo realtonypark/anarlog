@@ -491,7 +491,7 @@ export function SelectProviderAndModel() {
         description={
           <Trans>
             If batch transcription fails on your provider, it automatically
-            retries on the fallback. Only your own providers are ever used.
+            retries on the fallback.
           </Trans>
         }
         providerValue={fallback_stt_provider || FALLBACK_NONE_VALUE}
