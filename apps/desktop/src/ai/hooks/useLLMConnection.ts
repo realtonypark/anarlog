@@ -177,7 +177,14 @@ const resolveFallbackConn = (params: {
     isPaid,
   } = params;
 
-  if (!rawProviderId || !fallbackModelId) return null;
+  if (
+    typeof rawProviderId !== "string" ||
+    typeof fallbackModelId !== "string" ||
+    !rawProviderId ||
+    !fallbackModelId
+  ) {
+    return null;
+  }
   const providerId = normalizeLLMProviderId(rawProviderId);
   if (providerId === "anarlog") return null;
   if (

@@ -42,6 +42,7 @@ const {
   idMock,
   archMock,
   platformMock,
+  getStoredAiProviderMock,
 } = vi.hoisted(() => ({
   startTranscriptionMock: vi.fn(),
   stopTranscriptionMock: vi.fn(),
@@ -64,6 +65,7 @@ const {
   idMock: vi.fn(),
   archMock: vi.fn(),
   platformMock: vi.fn(),
+  getStoredAiProviderMock: vi.fn(),
 }));
 
 vi.mock("@anlg/plugin-transcription", () => ({
@@ -87,8 +89,16 @@ vi.mock("./useKeywords", () => ({
   useKeywords: vi.fn(() => []),
 }));
 
-vi.mock("./useSTTConnection", () => ({
-  useSTTConnection: useSTTConnectionMock,
+vi.mock("./useSTTConnection", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./useSTTConnection")>();
+  return {
+    useSTTConnection: useSTTConnectionMock,
+    resolveByokSttConnection: actual.resolveByokSttConnection,
+  };
+});
+
+vi.mock("~/settings/providers", () => ({
+  getStoredAiProvider: getStoredAiProviderMock,
 }));
 
 vi.mock("@anlg/ui/components/ui/toast", () => ({
@@ -1381,6 +1391,189 @@ describe("useRunBatch", () => {
         words: [expect.objectContaining({ text: "fresh" })],
       }),
     );
+  });
+
+  test("fails batch over to the configured fallback provider on quota errors", async () => {
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "openai"
+          : key === "fallback_stt_model"
+            ? "gpt-transcribe"
+            : [],
+    );
+    getStoredAiProviderMock.mockResolvedValue({
+      base_url: "https://api.openai.com/v1",
+      api_key: "fallback-key",
+    });
+    startTranscriptionMock
+      .mockRejectedValueOnce(new Error("402 Payment Required"))
+      .mockImplementationOnce(async (_params, options) => {
+        options.handlePersist(
+          [{ text: "fallback", start_ms: 0, end_ms: 100, channel: 0 }],
+          [],
+        );
+      });
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await act(async () => {
+      await result.current("/tmp/session.wav");
+    });
+
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(2);
+    expect(startTranscriptionMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        provider: "openai",
+        model: "gpt-transcribe",
+        api_key: "fallback-key",
+      }),
+      expect.any(Object),
+    );
+    expect(toastWarningMock).toHaveBeenCalledWith(
+      "Primary provider failed, using fallback",
+      expect.objectContaining({
+        description: expect.stringContaining("Using gpt-transcribe instead"),
+      }),
+    );
+    expect(saveBatchTranscriptMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "openai",
+        model: "gpt-transcribe",
+        words: [expect.objectContaining({ text: "fallback" })],
+      }),
+    );
+  });
+
+  test("retries transient batch errors before failing over", async () => {
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "openai"
+          : key === "fallback_stt_model"
+            ? "gpt-transcribe"
+            : [],
+    );
+    getStoredAiProviderMock.mockResolvedValue({
+      base_url: "https://api.openai.com/v1",
+      api_key: "fallback-key",
+    });
+    startTranscriptionMock
+      .mockRejectedValueOnce(new Error("503 Service Unavailable"))
+      .mockRejectedValueOnce(new Error("503 Service Unavailable"))
+      .mockImplementationOnce(async (_params, options) => {
+        options.handlePersist(
+          [{ text: "fallback", start_ms: 0, end_ms: 100, channel: 0 }],
+          [],
+        );
+      });
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await act(async () => {
+      await result.current("/tmp/session.wav");
+    });
+
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(3);
+    expect(startTranscriptionMock).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ provider: "openai" }),
+      expect.any(Object),
+    );
+    expect(toastWarningMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("skips a batch-incapable fallback with a toast and keeps the original error", async () => {
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "unknown-provider"
+          : key === "fallback_stt_model"
+            ? "some-model"
+            : [],
+    );
+    startTranscriptionMock.mockRejectedValueOnce(
+      new Error("402 Payment Required"),
+    );
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await expect(result.current("/tmp/session.wav")).rejects.toThrow(
+      "402 Payment Required",
+    );
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(1);
+    expect(toastWarningMock).toHaveBeenCalledWith(
+      "Fallback provider cannot transcribe this audio",
+      expect.any(Object),
+    );
+  });
+
+  test("keeps the retry error when the transient retry fails permanently", async () => {
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "openai"
+          : key === "fallback_stt_model"
+            ? "gpt-transcribe"
+            : [],
+    );
+    startTranscriptionMock
+      .mockRejectedValueOnce(new Error("503 Service Unavailable"))
+      .mockRejectedValueOnce(new Error("422 Unprocessable Entity"));
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await expect(result.current("/tmp/session.wav")).rejects.toThrow(
+      "422 Unprocessable Entity",
+    );
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(2);
+    expect(toastWarningMock).not.toHaveBeenCalled();
+  });
+
+  test("ignores a fallback with an unusable stored URL", async () => {
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "amazon_bedrock"
+          : key === "fallback_stt_model"
+            ? "gpt-transcribe"
+            : [],
+    );
+    getStoredAiProviderMock.mockResolvedValue({
+      base_url: "://not-a-url",
+      api_key: "fallback-key",
+    });
+    startTranscriptionMock.mockRejectedValueOnce(
+      new Error("402 Payment Required"),
+    );
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await expect(result.current("/tmp/session.wav")).rejects.toThrow(
+      "402 Payment Required",
+    );
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(1);
+    expect(toastWarningMock).not.toHaveBeenCalled();
+  });
+
+  test("keeps single-attempt failures when no fallback is configured", async () => {
+    startTranscriptionMock.mockRejectedValueOnce(
+      new Error("402 Payment Required"),
+    );
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await expect(result.current("/tmp/session.wav")).rejects.toThrow(
+      "402 Payment Required",
+    );
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(1);
+    expect(toastWarningMock).not.toHaveBeenCalled();
   });
 });
 

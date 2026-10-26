@@ -308,7 +308,13 @@ async function getUserFallbackTarget({
   primary: Pick<BatchTarget, "provider" | "model">;
   languages: readonly string[];
 }): Promise<BatchTarget | "ineligible" | null> {
-  if (!providerId || !model || providerId === "anarlog") {
+  if (
+    typeof providerId !== "string" ||
+    typeof model !== "string" ||
+    !providerId ||
+    !model ||
+    providerId === "anarlog"
+  ) {
     return null;
   }
   const provider = getBatchProvider(providerId, model);
