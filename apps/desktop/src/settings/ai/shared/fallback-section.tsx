@@ -33,6 +33,8 @@ export function FallbackRow({
   onProviderChange,
   onDisable,
   modelPicker,
+  triggerClassName = "bg-card shadow-none",
+  triggerCorners,
 }: {
   title: ReactNode;
   description: ReactNode;
@@ -41,6 +43,8 @@ export function FallbackRow({
   onProviderChange: (provider: string) => void;
   onDisable: () => void;
   modelPicker: ReactNode;
+  triggerClassName?: string;
+  triggerCorners?: { radius: number; smoothing: number };
 }) {
   const [expanded, setExpanded] = useState(false);
   const open = expanded || providerValue !== "";
@@ -64,7 +68,10 @@ export function FallbackRow({
         <div className="flex flex-row items-center gap-4">
           <div className="min-w-0 flex-2">
             <Select value={providerValue} onValueChange={onProviderChange}>
-              <SelectTrigger className="bg-card shadow-none">
+              <SelectTrigger
+                corners={triggerCorners}
+                className={triggerClassName}
+              >
                 <SelectValue placeholder={<Trans>Select a provider</Trans>} />
               </SelectTrigger>
               <SelectContent>

@@ -495,6 +495,8 @@ export function SelectProviderAndModel() {
           </Trans>
         }
         providerValue={fallback_stt_provider || ""}
+        triggerClassName="bg-card rounded-[18px] shadow-none"
+        triggerCorners={{ radius: 18, smoothing: 0 }}
         providerOptions={fallbackProviderOptions.map((provider) => {
           const configured =
             configuredProviders[provider.id as ProviderId]?.configured ?? false;
@@ -533,7 +535,10 @@ export function SelectProviderAndModel() {
               onValueChange={handleFallbackModelChange}
               disabled={!fallback_stt_provider || fallbackModels.length === 0}
             >
-              <SelectTrigger className="bg-card shadow-none">
+              <SelectTrigger
+                corners={{ radius: 18, smoothing: 0 }}
+                className="bg-card rounded-[18px] text-left shadow-none"
+              >
                 <SelectValue placeholder={t`Select a model`} />
               </SelectTrigger>
               <SelectContent align="end">
