@@ -297,6 +297,12 @@ export function classifySttFailure(error: unknown): SttFailureDecision {
   return isTranscriptionAuthenticationError(error) ? "failover" : "none";
 }
 
+function toastIneligibleUserFallback(model: string | undefined) {
+  toast.warning("Fallback provider cannot transcribe this audio", {
+    description: `${model} does not support batch transcription with the selected languages.`,
+  });
+}
+
 async function getUserFallbackTarget({
   providerId,
   model,
@@ -305,7 +311,7 @@ async function getUserFallbackTarget({
 }: {
   providerId: string | undefined;
   model: string | undefined;
-  primary: Pick<BatchTarget, "provider" | "model">;
+  primary: Pick<BatchTarget, "provider" | "model"> | null;
   languages: readonly string[];
 }): Promise<BatchTarget | "ineligible" | null> {
   if (
@@ -321,7 +327,7 @@ async function getUserFallbackTarget({
   if (!provider) {
     return "ineligible";
   }
-  if (provider === primary.provider && model === primary.model) {
+  if (primary && provider === primary.provider && model === primary.model) {
     return null;
   }
   if (!(await canUseBatchTarget(provider, model, languages))) {
@@ -459,6 +465,19 @@ export const useRunBatch = (sessionId: string) => {
       const shouldUseSelectedTarget =
         selectedTargetSupported ||
         (fallbackTarget && sameBatchTarget(selectedTarget, fallbackTarget));
+      // When the selected provider cannot do batch at all (e.g. a live-only
+      // model), prefer the user's configured fallback over the built-in
+      // Pro-cloud/local substitution.
+      const userFallbackTarget =
+        !shouldUseSelectedTarget && !options?.resume
+          ? await getUserFallbackTarget({
+              providerId: fallbackSttProvider,
+              model: fallbackSttModel,
+              primary: selectedTarget,
+              languages,
+            })
+          : null;
+      options?.signal?.throwIfAborted();
       const initialTarget = options?.resume
         ? {
             provider: options.resume.provider,
@@ -469,7 +488,9 @@ export const useRunBatch = (sessionId: string) => {
           }
         : shouldUseSelectedTarget
           ? (selectedTarget ?? fallbackTarget)
-          : fallbackTarget;
+          : userFallbackTarget && userFallbackTarget !== "ineligible"
+            ? userFallbackTarget
+            : fallbackTarget;
 
       if (!initialTarget) {
         throw new Error(
@@ -485,6 +506,14 @@ export const useRunBatch = (sessionId: string) => {
           throw new Error(t`Transcription failed`);
         }
         target = { ...target, apiKey: cloudAccessToken };
+      }
+
+      if (
+        userFallbackTarget === "ineligible" &&
+        !options?.recovery &&
+        !options?.resume
+      ) {
+        toastIneligibleUserFallback(fallbackSttModel);
       }
 
       if (!shouldUseSelectedTarget && !options?.recovery && !options?.resume) {
@@ -670,9 +699,7 @@ export const useRunBatch = (sessionId: string) => {
               languages,
             });
             if (fallbackTarget === "ineligible") {
-              toast.warning("Fallback provider cannot transcribe this audio", {
-                description: `${fallbackSttModel} does not support batch transcription with the selected languages.`,
-              });
+              toastIneligibleUserFallback(fallbackSttModel);
               throw latest;
             }
             if (!fallbackTarget) {
@@ -822,6 +849,8 @@ export const useRunBatch = (sessionId: string) => {
       audioRetention,
       billing.isPaid,
       dictionaryTerms,
+      fallbackSttModel,
+      fallbackSttProvider,
       rememberSpeakers,
       session,
       participants,

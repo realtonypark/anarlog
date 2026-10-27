@@ -1281,6 +1281,105 @@ describe("useRunBatch", () => {
     );
   });
 
+  test("prefers the configured fallback over Soniqo when the selected provider cannot do batch", async () => {
+    useSTTConnectionMock.mockReturnValue({
+      conn: {
+        provider: "nari",
+        model: "qwen3-asr",
+        baseUrl: "https://api.narilabs.com",
+        apiKey: "nari-key",
+      },
+    });
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "openai"
+          : key === "fallback_stt_model"
+            ? "gpt-transcribe"
+            : [],
+    );
+    getStoredAiProviderMock.mockResolvedValue({
+      base_url: "https://api.openai.com/v1",
+      api_key: "fallback-key",
+    });
+    startTranscriptionMock.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await act(async () => {
+      await result.current("/tmp/session.wav");
+    });
+
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(1);
+    expect(startTranscriptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "openai",
+        model: "gpt-transcribe",
+        api_key: "fallback-key",
+      }),
+      expect.any(Object),
+    );
+    expect(toastWarningMock).toHaveBeenCalledWith(
+      "Using a batch transcription provider",
+      expect.objectContaining({
+        description:
+          "qwen3-asr is not available for batch transcription. Using gpt-transcribe instead.",
+      }),
+    );
+    expect(toastWarningMock).not.toHaveBeenCalledWith(
+      "Primary provider failed, using fallback",
+      expect.anything(),
+    );
+  });
+
+  test("uses Soniqo with a skip toast when the configured fallback cannot do batch", async () => {
+    useSTTConnectionMock.mockReturnValue({
+      conn: {
+        provider: "nari",
+        model: "qwen3-asr",
+        baseUrl: "https://api.narilabs.com",
+        apiKey: "nari-key",
+      },
+    });
+    useConfigValueMock.mockImplementation((key) =>
+      key === "ai_language"
+        ? "en"
+        : key === "fallback_stt_provider"
+          ? "unknown-provider"
+          : key === "fallback_stt_model"
+            ? "some-model"
+            : [],
+    );
+    startTranscriptionMock.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useRunBatch("session-1"));
+
+    await act(async () => {
+      await result.current("/tmp/session.wav");
+    });
+
+    expect(startTranscriptionMock).toHaveBeenCalledTimes(1);
+    expect(startTranscriptionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "soniqo",
+        model: "soniqo-parakeet-batch",
+      }),
+      expect.any(Object),
+    );
+    expect(toastWarningMock).toHaveBeenCalledWith(
+      "Fallback provider cannot transcribe this audio",
+      expect.any(Object),
+    );
+    expect(toastWarningMock).toHaveBeenCalledWith(
+      "Using a batch transcription provider",
+      expect.objectContaining({
+        description:
+          "qwen3-asr is not available for batch transcription. Using Soniqo batch transcription instead.",
+      }),
+    );
+  });
+
   test("uses a request-ready cloud token before transcription starts", async () => {
     useSTTConnectionMock.mockReturnValue({
       conn: {
