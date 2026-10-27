@@ -42,6 +42,10 @@ import {
   getProviderSelectionBlockers,
   requiresEntitlement,
 } from "~/settings/ai/shared/eligibility";
+import {
+  FALLBACK_NONE_VALUE,
+  FallbackRow,
+} from "~/settings/ai/shared/fallback-section";
 import { listAnthropicModels } from "~/settings/ai/shared/list-anthropic";
 import { listAppleFoundationModels } from "~/settings/ai/shared/list-apple-foundation";
 import { listAzureAIModels } from "~/settings/ai/shared/list-azure-ai";
@@ -103,10 +107,14 @@ export function SelectProviderAndModel() {
     current_llm_model,
     current_llm_provider,
     current_llm_reasoning_effort,
+    fallback_llm_model,
+    fallback_llm_provider,
   } = useConfigValues([
     "current_llm_model",
     "current_llm_provider",
     "current_llm_reasoning_effort",
+    "fallback_llm_model",
+    "fallback_llm_provider",
   ] as const);
   const setReasoningEffort = useSetSettingValue("current_llm_reasoning_effort");
   const selectedProviderConfigured = current_llm_provider
@@ -368,6 +376,82 @@ export function SelectProviderAndModel() {
     persistSelection(effectiveSelection.provider, model, requestId);
   };
 
+  const fallbackRequestRef = useRef(0);
+  const persistFallbackSelection = (provider: string, model: string) => {
+    void setSettingValues({
+      fallback_llm_provider: provider,
+      fallback_llm_model: model,
+    }).catch((error) => {
+      console.error(
+        "[settings] failed to update LLM fallback selection",
+        error,
+      );
+    });
+  };
+
+  const handleFallbackProviderChange = (provider: string) => {
+    if (provider === FALLBACK_NONE_VALUE) {
+      persistFallbackSelection("", "");
+      return;
+    }
+
+    const requestId = ++fallbackRequestRef.current;
+    const applyModels = (models: string[]) => {
+      if (fallbackRequestRef.current !== requestId) {
+        return;
+      }
+      persistFallbackSelection(
+        provider,
+        getPreferredProviderModel(
+          provider === fallback_llm_provider ? fallback_llm_model : undefined,
+          models,
+          { allowSavedModelWithoutChoices: provider === "custom" },
+        ),
+      );
+    };
+
+    const cached = getCachedModels(provider);
+    if (cached.length > 0) {
+      applyModels(cached);
+      return;
+    }
+
+    void (async () => {
+      try {
+        applyModels(await fetchModels(provider));
+      } catch {
+        if (fallbackRequestRef.current === requestId) {
+          persistFallbackSelection(provider, "");
+        }
+      }
+    })();
+  };
+
+  const handleFallbackModelChange = (model: string) => {
+    if (!fallback_llm_provider) {
+      return;
+    }
+    persistFallbackSelection(fallback_llm_provider, model);
+  };
+
+  const fallbackProviderOptions = providerOptions
+    .filter((provider) => provider.id !== "anarlog")
+    .map((provider) => {
+      const requiresPro = requiresEntitlement(provider.requirements, "pro");
+      const locked = requiresPro && !billing.isPaid;
+      const configured = configuredProviders[provider.id]?.configured ?? false;
+      return {
+        id: provider.id,
+        displayName: provider.displayName,
+        icon: provider.icon,
+        disabled: locked || !configured,
+        unconfigured: !configured && !locked,
+        note: locked ? (
+          <Trans>Upgrade to Pro to use this provider.</Trans>
+        ) : undefined,
+      };
+    });
+
   return (
     <div className="flex flex-col gap-4">
       {defaultSelection && !activePendingSelection ? (
@@ -498,6 +582,34 @@ export function SelectProviderAndModel() {
           )}
         </SettingRow>
       ) : null}
+
+      <FallbackRow
+        title={<Trans>Fallback</Trans>}
+        description={
+          <Trans>
+            If your provider fails, requests automatically routes to fallback
+            model.
+          </Trans>
+        }
+        providerValue={fallback_llm_provider || ""}
+        providerOptions={fallbackProviderOptions}
+        onProviderChange={handleFallbackProviderChange}
+        onDisable={() => persistFallbackSelection("", "")}
+        modelPicker={
+          <ModelCombobox
+            providerId={fallback_llm_provider || ""}
+            value={fallback_llm_model || ""}
+            onChange={handleFallbackModelChange}
+            disabled={!fallback_llm_provider}
+            listModels={
+              fallback_llm_provider
+                ? configuredProviders[fallback_llm_provider]?.listModels
+                : undefined
+            }
+            isConfigured={false}
+          />
+        }
+      />
     </div>
   );
 }

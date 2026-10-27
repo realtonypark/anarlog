@@ -1495,6 +1495,10 @@ msgstr "Configure a chat model to use the quick composer."
 msgid "Configure Providers"
 msgstr "Configure Providers"
 
+#: src/settings/ai/stt/select.tsx
+msgid "Configure this provider to use it as a fallback."
+msgstr "Configure this provider to use it as a fallback."
+
 #: src/folders/folder-editor.tsx
 #: src/session/components/note-input/transcript/renderer/speaker-assign.tsx
 msgid "Confirm"
@@ -2579,6 +2583,11 @@ msgstr "Failed to load Outlook Calendar"
 msgid "Failed to load pull request"
 msgstr "Failed to load pull request"
 
+#: src/settings/ai/llm/select.tsx
+#: src/settings/ai/stt/select.tsx
+msgid "Fallback"
+msgstr "Fallback"
+
 #: src/settings/stats/badge-collection.tsx
 msgid "Familiar Face"
 msgstr "Familiar Face"
@@ -2949,9 +2958,17 @@ msgstr "Icons"
 msgid "If Anarlog stays closed, paste the link in the sign-in window."
 msgstr "If Anarlog stays closed, paste the link in the sign-in window."
 
+#: src/settings/ai/stt/select.tsx
+msgid "If batch transcription fails on your provider, it automatically retries on the fallback."
+msgstr "If batch transcription fails on your provider, it automatically retries on the fallback."
+
 #: src/settings/referrals.tsx
 msgid "If your friend signed up through your link and started their free trial, but your free month hasn't appeared, email us and we'll help."
 msgstr "If your friend signed up through your link and started their free trial, but your free month hasn't appeared, email us and we'll help."
+
+#: src/settings/ai/llm/select.tsx
+msgid "If your provider fails, requests automatically routes to fallback model."
+msgstr "If your provider fails, requests automatically routes to fallback model."
 
 #: src/onboarding/index.tsx
 msgid "Import notes and transcripts from the meeting apps you already use."
@@ -3999,6 +4016,10 @@ msgstr "No transcript available"
 #: src/settings/team/index.tsx
 msgid "No upcoming bots."
 msgstr "No upcoming bots."
+
+#: src/settings/ai/shared/fallback-section.tsx
+msgid "None"
+msgstr "None"
 
 #: src/settings/stats/insights.tsx
 msgid "Not available"
@@ -5170,6 +5191,7 @@ msgid "Select a person to view details"
 msgstr "Select a person to view details"
 
 #: src/settings/ai/llm/select.tsx
+#: src/settings/ai/shared/fallback-section.tsx
 #: src/settings/ai/stt/select.tsx
 msgid "Select a provider"
 msgstr "Select a provider"

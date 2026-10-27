@@ -5,9 +5,24 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { normalizeLLMProviderId, useLanguageModel } from "./useLLMConnection";
 
-const mocks = vi.hoisted(() => ({ provider: "custom" as string }));
+const mocks = vi.hoisted(
+  () =>
+    ({
+      provider: "custom",
+      fallbackProvider: undefined,
+      fallbackModel: undefined,
+    }) as {
+      provider: string;
+      fallbackProvider: string | undefined;
+      fallbackModel: string | undefined;
+    },
+);
 const managed = vi.hoisted(() => ({ ready: true, disabled: false }));
+const toastWarningSpy = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: vi.fn() }));
+vi.mock("@anlg/ui/components/ui/toast", () => ({
+  toast: { warning: toastWarningSpy },
+}));
 vi.mock("~/settings/queries", () => ({
   useSettingsReady: () => managed.ready,
 }));
@@ -28,11 +43,15 @@ vi.mock("~/shared/config", () => ({
     current_llm_provider: mocks.provider,
     current_llm_model: "mtplx",
     current_llm_reasoning_effort: "default",
+    fallback_llm_provider: mocks.fallbackProvider,
+    fallback_llm_model: mocks.fallbackModel,
   }),
 }));
 
 afterEach(() => {
   mocks.provider = "custom";
+  mocks.fallbackProvider = undefined;
+  mocks.fallbackModel = undefined;
 });
 
 it.each([false, true])(
@@ -157,3 +176,129 @@ it.each([
     }
   },
 );
+
+it("fails over to the configured fallback model on quota errors and toasts", async () => {
+  mocks.fallbackProvider = "openai";
+  mocks.fallbackModel = "gpt-fallback";
+  vi.mocked(tauriFetch).mockImplementation(async (_input, init) => {
+    const body = JSON.parse(String(init?.body));
+    if (body.model === "mtplx") {
+      return new Response(
+        JSON.stringify({ error: { message: "Insufficient credits" } }),
+        {
+          status: 402,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+    return Response.json({
+      id: "fallback-completion",
+      object: "response",
+      created_at: 0,
+      status: "completed",
+      model: "gpt-fallback",
+      output: [
+        {
+          type: "message",
+          id: "msg-1",
+          status: "completed",
+          role: "assistant",
+          content: [
+            {
+              type: "output_text",
+              text: "Fallback summary",
+              annotations: [],
+            },
+          ],
+        },
+      ],
+      usage: {
+        input_tokens: 1,
+        output_tokens: 2,
+        total_tokens: 3,
+        input_tokens_details: { cached_tokens: 0 },
+        output_tokens_details: { reasoning_tokens: 0 },
+      },
+    });
+  });
+
+  const { result, unmount } = renderHook(() => useLanguageModel());
+  expect(result.current).not.toBeNull();
+  try {
+    const completion = await generateText({
+      model: result.current!,
+      prompt: "Summarize the meeting",
+      maxRetries: 0,
+    });
+    expect(await completion.text).toBe("Fallback summary");
+    expect(vi.mocked(tauriFetch)).toHaveBeenCalledTimes(2);
+    expect(toastWarningSpy).toHaveBeenCalledWith(
+      "Primary provider failed, using fallback",
+      expect.objectContaining({
+        description: expect.stringContaining("Using"),
+      }),
+    );
+  } finally {
+    unmount();
+  }
+});
+
+it("ignores a hosted fallback target and keeps primary-only behavior", async () => {
+  mocks.fallbackProvider = "anarlog";
+  mocks.fallbackModel = "cloud";
+  vi.mocked(tauriFetch).mockImplementation(async () => {
+    return new Response(
+      JSON.stringify({ error: { message: "Insufficient credits" } }),
+      {
+        status: 402,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  });
+
+  const { result, unmount } = renderHook(() => useLanguageModel());
+  expect(result.current).not.toBeNull();
+  try {
+    await expect(
+      generateText({
+        model: result.current!,
+        prompt: "Summarize the meeting",
+        maxRetries: 0,
+      }),
+    ).rejects.toThrow();
+    expect(vi.mocked(tauriFetch)).toHaveBeenCalledTimes(1);
+    expect(toastWarningSpy).not.toHaveBeenCalled();
+  } finally {
+    unmount();
+  }
+});
+
+it("does not fail over when the fallback equals the primary target", async () => {
+  mocks.fallbackProvider = "custom";
+  mocks.fallbackModel = "mtplx";
+  vi.mocked(tauriFetch).mockImplementation(async () => {
+    return new Response(
+      JSON.stringify({ error: { message: "Insufficient credits" } }),
+      {
+        status: 402,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  });
+
+  const { result, unmount } = renderHook(() => useLanguageModel());
+  expect(result.current).not.toBeNull();
+  try {
+    await expect(
+      generateText({
+        model: result.current!,
+        prompt: "Summarize the meeting",
+        maxRetries: 0,
+      }),
+    ).rejects.toThrow();
+    expect(vi.mocked(tauriFetch)).toHaveBeenCalledTimes(1);
+    expect(toastWarningSpy).not.toHaveBeenCalled();
+  } finally {
+    unmount();
+  }
+});

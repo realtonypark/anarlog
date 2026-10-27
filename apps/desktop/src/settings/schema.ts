@@ -309,6 +309,14 @@ export const SETTING_DEFINITIONS = {
     type: "string",
     path: ["ai", "current_llm_model"],
   },
+  fallback_llm_provider: {
+    type: "string",
+    path: ["ai", "fallback_llm_provider"],
+  },
+  fallback_llm_model: {
+    type: "string",
+    path: ["ai", "fallback_llm_model"],
+  },
   current_llm_reasoning_effort: {
     type: "string",
     path: ["ai", "current_llm_reasoning_effort"],
@@ -321,6 +329,14 @@ export const SETTING_DEFINITIONS = {
   current_stt_model: {
     type: "string",
     path: ["ai", "current_stt_model"],
+  },
+  fallback_stt_provider: {
+    type: "string",
+    path: ["ai", "fallback_stt_provider"],
+  },
+  fallback_stt_model: {
+    type: "string",
+    path: ["ai", "fallback_stt_model"],
   },
   local_stt_model_path: {
     type: "string",

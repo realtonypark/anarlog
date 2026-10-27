@@ -19,6 +19,53 @@ import {
 } from "~/stt/capabilities";
 import { localSttQueries } from "~/stt/useLocalSttModel";
 
+const ROUTED_STT_PROVIDERS = new Set([
+  "inworld",
+  "gradium",
+  "modulate",
+  "alebex",
+  "nvidia",
+  "amazon_bedrock",
+]);
+
+export function resolveByokSttConnection({
+  providerId,
+  model,
+  providerConfig,
+}: {
+  providerId: string;
+  model: string;
+  providerConfig: { base_url?: string; api_key?: string } | undefined;
+}): {
+  provider: string;
+  model: string;
+  baseUrl: string;
+  apiKey: string;
+} | null {
+  const defaultBaseUrl = PROVIDERS.find(
+    (provider) => provider.id === providerId,
+  )?.baseUrl;
+  const baseUrl = providerConfig?.base_url?.trim() || defaultBaseUrl?.trim();
+  const apiKey = providerConfig?.api_key?.trim();
+
+  if (!baseUrl || (!apiKey && providerId !== "nvidia")) {
+    return null;
+  }
+
+  let routedBaseUrl = baseUrl;
+  if (ROUTED_STT_PROVIDERS.has(providerId)) {
+    const url = new URL(baseUrl);
+    url.searchParams.set("provider", providerId);
+    routedBaseUrl = url.toString();
+  }
+  return {
+    provider: providerId,
+    model,
+    baseUrl: routedBaseUrl,
+    apiKey: apiKey ?? "",
+  };
+}
+
 export const useSTTConnection = () => {
   const auth = useAuth();
   const billing = useBillingAccess();
@@ -139,7 +186,6 @@ export const useSTTConnection = () => {
     (provider) => provider.id === current_stt_provider,
   )?.baseUrl;
   const baseUrl = providerConfig?.base_url?.trim() || defaultBaseUrl?.trim();
-  const apiKey = providerConfig?.api_key?.trim();
 
   const connection = useMemo(() => {
     if (!current_stt_provider || !current_stt_model) {
@@ -165,31 +211,11 @@ export const useSTTConnection = () => {
       };
     }
 
-    if (!baseUrl || (!apiKey && current_stt_provider !== "nvidia")) {
-      return null;
-    }
-
-    let routedBaseUrl = baseUrl;
-    if (
-      [
-        "inworld",
-        "gradium",
-        "modulate",
-        "alebex",
-        "nvidia",
-        "amazon_bedrock",
-      ].includes(current_stt_provider)
-    ) {
-      const url = new URL(baseUrl);
-      url.searchParams.set("provider", current_stt_provider);
-      routedBaseUrl = url.toString();
-    }
-    return {
-      provider: current_stt_provider,
+    return resolveByokSttConnection({
+      providerId: current_stt_provider,
       model: current_stt_model,
-      baseUrl: routedBaseUrl,
-      apiKey: apiKey ?? "",
-    };
+      providerConfig,
+    });
   }, [
     current_stt_provider,
     current_stt_model,
@@ -198,7 +224,7 @@ export const useSTTConnection = () => {
     isCloudModel,
     local.data,
     baseUrl,
-    apiKey,
+    providerConfig,
     auth,
     billing.isPaid,
   ]);

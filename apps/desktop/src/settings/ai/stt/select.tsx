@@ -72,6 +72,10 @@ import {
   getProviderSelectionBlockers,
   requiresEntitlement,
 } from "~/settings/ai/shared/eligibility";
+import {
+  FALLBACK_NONE_VALUE,
+  FallbackRow,
+} from "~/settings/ai/shared/fallback-section";
 import { PersistAiSelection } from "~/settings/ai/shared/persist-selection";
 import {
   getConfiguredProviderIds,
@@ -104,9 +108,16 @@ import {
 
 export function SelectProviderAndModel() {
   const { t } = useLingui();
-  const { current_stt_provider, current_stt_model } = useConfigValues([
+  const {
+    current_stt_provider,
+    current_stt_model,
+    fallback_stt_model,
+    fallback_stt_provider,
+  } = useConfigValues([
     "current_stt_provider",
     "current_stt_model",
+    "fallback_stt_model",
+    "fallback_stt_provider",
   ] as const);
   const billing = useBillingAccess();
   const { providers: configuredProviders, isReady: providerSettingsReady } =
@@ -249,6 +260,60 @@ export function SelectProviderAndModel() {
     setSelection({
       current_stt_provider: visibleProvider,
       current_stt_model: model,
+    });
+  };
+
+  const fallbackModels = fallback_stt_provider
+    ? (
+        configuredProviders[fallback_stt_provider as ProviderId]?.models ?? []
+      ).filter(
+        (model) =>
+          getSttModelTranscriptionMode(fallback_stt_provider, model.id) !==
+          "live",
+      )
+    : [];
+  const fallbackProviderOptions = providerOptions.filter(
+    (provider) =>
+      provider.id !== "anarlog" &&
+      (provider.id === "custom" ||
+        (configuredProviders[provider.id as ProviderId]?.models ?? []).some(
+          (model) =>
+            getSttModelTranscriptionMode(provider.id, model.id) !== "live",
+        )),
+  );
+
+  const handleFallbackProviderChange = (provider: string) => {
+    if (provider === FALLBACK_NONE_VALUE) {
+      setSelection({ fallback_stt_provider: "", fallback_stt_model: "" });
+      return;
+    }
+
+    const nextModels = (
+      configuredProviders[provider as ProviderId]?.models ?? []
+    ).filter(
+      (model) => getSttModelTranscriptionMode(provider, model.id) !== "live",
+    );
+    const nextModel =
+      getPreferredProviderModel(
+        provider === fallback_stt_provider ? fallback_stt_model : undefined,
+        nextModels,
+        { allowSavedModelWithoutChoices: provider === "custom" },
+      ) || "";
+    rememberModel(provider, nextModel);
+    setSelection({
+      fallback_stt_provider: provider,
+      fallback_stt_model: nextModel,
+    });
+  };
+
+  const handleFallbackModelChange = (model: string) => {
+    if (!fallback_stt_provider) {
+      return;
+    }
+    rememberModel(fallback_stt_provider, model);
+    setSelection({
+      fallback_stt_provider,
+      fallback_stt_model: model,
     });
   };
   return (
@@ -420,6 +485,73 @@ export function SelectProviderAndModel() {
           </div>
         )}
       </div>
+
+      <FallbackRow
+        title={<Trans>Fallback</Trans>}
+        description={
+          <Trans>
+            If batch transcription fails on your provider, it automatically
+            retries on the fallback.
+          </Trans>
+        }
+        providerValue={fallback_stt_provider || ""}
+        triggerClassName="bg-card rounded-[18px] shadow-none"
+        triggerCorners={{ radius: 18, smoothing: 0 }}
+        providerOptions={fallbackProviderOptions.map((provider) => {
+          const configured =
+            configuredProviders[provider.id as ProviderId]?.configured ?? false;
+          const requiresPro = requiresEntitlement(provider.requirements, "pro");
+          const locked = requiresPro && !billing.isPaid;
+          return {
+            id: provider.id,
+            displayName: provider.displayName,
+            icon: provider.icon,
+            disabled: provider.disabled || locked || !configured,
+            unconfigured: !configured && !locked,
+            note:
+              locked || !configured ? (
+                <Trans>Configure this provider to use it as a fallback.</Trans>
+              ) : undefined,
+          };
+        })}
+        onProviderChange={handleFallbackProviderChange}
+        onDisable={() =>
+          setSelection({ fallback_stt_provider: "", fallback_stt_model: "" })
+        }
+        modelPicker={
+          fallback_stt_provider === "custom" ? (
+            <Input
+              value={fallback_stt_model || ""}
+              onChange={(event) =>
+                handleFallbackModelChange(event.target.value)
+              }
+              className="text-xs"
+              placeholder={t`Enter a model identifier`}
+              disabled={!fallback_stt_provider}
+            />
+          ) : (
+            <Select
+              value={fallback_stt_model || ""}
+              onValueChange={handleFallbackModelChange}
+              disabled={!fallback_stt_provider || fallbackModels.length === 0}
+            >
+              <SelectTrigger
+                corners={{ radius: 18, smoothing: 0 }}
+                className="bg-card rounded-[18px] text-left shadow-none"
+              >
+                <SelectValue placeholder={t`Select a model`} />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {fallbackModels.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    {displayModelLabel(model.id, model.displayName)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        }
+      />
     </div>
   );
 }
