@@ -2967,8 +2967,8 @@ msgid "If your friend signed up through your link and started their free trial, 
 msgstr "If your friend signed up through your link and started their free trial, but your free month hasn't appeared, email us and we'll help."
 
 #: src/settings/ai/llm/select.tsx
-msgid "If your provider fails, requests automatically continue on the fallback."
-msgstr "If your provider fails, requests automatically continue on the fallback."
+msgid "If your provider fails, requests automatically routes to fallback model."
+msgstr "If your provider fails, requests automatically routes to fallback model."
 
 #: src/onboarding/index.tsx
 msgid "Import notes and transcripts from the meeting apps you already use."

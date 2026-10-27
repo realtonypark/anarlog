@@ -2967,7 +2967,7 @@ msgid "If your friend signed up through your link and started their free trial, 
 msgstr ""
 
 #: src/settings/ai/llm/select.tsx
-msgid "If your provider fails, requests automatically continue on the fallback."
+msgid "If your provider fails, requests automatically routes to fallback model."
 msgstr ""
 
 #: src/onboarding/index.tsx

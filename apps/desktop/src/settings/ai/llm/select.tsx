@@ -587,8 +587,8 @@ export function SelectProviderAndModel() {
         title={<Trans>Fallback</Trans>}
         description={
           <Trans>
-            If your provider fails, requests automatically continue on the
-            fallback.
+            If your provider fails, requests automatically routes to fallback
+            model.
           </Trans>
         }
         providerValue={fallback_llm_provider || ""}
