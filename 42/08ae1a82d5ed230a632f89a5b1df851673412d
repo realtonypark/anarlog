@@ -1,0 +1,16 @@
+apps/desktop/src/settings/ai/shared/fallback-section.tsx
+  h_05e5164a29872e 36-37,46-47,71-74
+apps/desktop/src/settings/ai/stt/select.tsx
+  h_05e5164a29872e 498-499,538-541
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4208ae1a82d5ed230a632f89a5b1df851673412d",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
