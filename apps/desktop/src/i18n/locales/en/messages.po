@@ -5509,6 +5509,10 @@ msgstr "Show in folder"
 msgid "Show meeting times as 14:00 instead of 2:00 PM."
 msgstr "Show meeting times as 14:00 instead of 2:00 PM."
 
+#: src/chat/components/model-selector.tsx
+msgid "Show more models"
+msgstr "Show more models"
+
 #: src/settings/general/app-settings.tsx
 msgid "Show release notes"
 msgstr "Show release notes"

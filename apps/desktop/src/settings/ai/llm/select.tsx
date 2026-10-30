@@ -22,6 +22,7 @@ import {
 } from "./selection";
 import { PROVIDERS } from "./shared";
 
+import { modelMetadataQueryOptions } from "~/ai/hooks/useModelMetadata";
 import {
   normalizeReasoningEffort,
   supportsReasoningEffort,
@@ -29,7 +30,6 @@ import {
 import { useBillingAccess } from "~/auth/billing-context";
 import { ProviderIconSlot } from "~/settings/ai/shared";
 import { requiresEntitlement } from "~/settings/ai/shared/eligibility";
-import type { ListModelsResult } from "~/settings/ai/shared/list-common";
 import { ModelCombobox } from "~/settings/ai/shared/model-combobox";
 import { PersistAiSelection } from "~/settings/ai/shared/persist-selection";
 import {
@@ -156,11 +156,13 @@ export function SelectProviderAndModel() {
     }
 
     return (
-      queryClient.getQueryData<ListModelsResult>([
-        "models",
-        provider,
-        status.listModels,
-      ])?.models ?? []
+      queryClient.getQueryData(
+        modelMetadataQueryOptions(
+          provider,
+          status.listModels,
+          status.modelScope,
+        ).queryKey,
+      )?.models ?? []
     );
   };
 
@@ -171,13 +173,9 @@ export function SelectProviderAndModel() {
       return [];
     }
 
-    const result = await queryClient.fetchQuery({
-      queryKey: ["models", provider, listModels],
-      queryFn: async () => await listModels(),
-      retry: 3,
-      retryDelay: 300,
-      staleTime: 1000 * 2,
-    });
+    const result = await queryClient.fetchQuery(
+      modelMetadataQueryOptions(provider, listModels, status.modelScope),
+    );
 
     return result.models;
   };
@@ -418,6 +416,9 @@ export function SelectProviderAndModel() {
               effectiveSelection.provider
                 ? configuredProviders[effectiveSelection.provider]?.listModels
                 : undefined
+            }
+            modelScope={
+              configuredProviders[effectiveSelection.provider]?.modelScope
             }
             isConfigured={isConfigured && health.status === "success"}
             suffix={isConfigured ? <HealthStatusIndicator /> : undefined}

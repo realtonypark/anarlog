@@ -12,6 +12,11 @@ const mocks = vi.hoisted(() => ({
   selection: { providerId: "openai", modelId: "gpt-5.4" },
   save: vi.fn(),
   toastError: vi.fn(),
+  catalogs: {
+    openai: ["gpt-5.4"],
+    anthropic: ["claude-sonnet-5"],
+    anarlog: ["Auto", "~anthropic/claude-sonnet-latest"],
+  },
 }));
 
 vi.mock("~/ai/hooks", async () => ({
@@ -34,16 +39,22 @@ vi.mock("~/settings/ai/llm/configured-providers", () => ({
     providers: {
       openai: {
         configured: true,
-        listModels: async () => ({ models: ["gpt-5.4"], ignored: [] }),
+        listModels: async () => ({
+          models: mocks.catalogs.openai,
+          ignored: [],
+        }),
       },
       anthropic: {
         configured: true,
-        listModels: async () => ({ models: ["claude-sonnet-5"], ignored: [] }),
+        listModels: async () => ({
+          models: mocks.catalogs.anthropic,
+          ignored: [],
+        }),
       },
       anarlog: {
         configured: true,
         listModels: async () => ({
-          models: ["Auto", "~anthropic/claude-sonnet-latest"],
+          models: mocks.catalogs.anarlog,
           ignored: [],
         }),
       },
@@ -94,17 +105,17 @@ it("opens providers before models, supports keyboard search, and saves chat-only
   const search = screen.getByRole("textbox", { name: "Search models" });
   await waitFor(() => expect(document.activeElement).toBe(search));
   fireEvent.change(search, { target: { value: "sonnet" } });
-  await waitFor(() =>
-    expect(screen.queryByRole("menuitem", { name: "OpenAI" })).toBeNull(),
-  );
+  const matchingModel = await screen.findByRole("menuitem", {
+    name: "Claude Sonnet 5",
+  });
+  expect(screen.getByRole("group", { name: "Anthropic" })).toBeTruthy();
+  expect(screen.getByRole("group", { name: "Anarlog" })).toBeTruthy();
+  expect(screen.queryByRole("group", { name: "OpenAI" })).toBeNull();
+  expect(screen.queryByRole("menuitem", { name: "Anthropic" })).toBeNull();
+  expect(screen.getAllByRole("menu")).toHaveLength(1);
   fireEvent.keyDown(search, { key: "ArrowDown" });
-  expect(document.activeElement).toBe(
-    screen.getByRole("menuitem", { name: "Anthropic" }),
-  );
-  fireEvent.keyDown(document.activeElement!, { key: "ArrowRight" });
-  fireEvent.click(
-    await screen.findByRole("menuitem", { name: "Claude Sonnet 5" }),
-  );
+  expect(document.activeElement).toBe(matchingModel);
+  fireEvent.keyDown(matchingModel, { key: "Enter" });
   await waitFor(() =>
     expect(screen.queryByPlaceholderText("Search models")).toBeNull(),
   );
@@ -145,4 +156,37 @@ it("keeps the current model and the picker open when saving fails", async () => 
   expect(
     screen.getByRole("menu", { name: "Chat model: OpenAI, GPT 5.4" }),
   ).toBeTruthy();
+});
+
+it("bounds large search results until the user asks for more", async () => {
+  mocks.catalogs.openai = Array.from(
+    { length: 120 },
+    (_, index) => `gpt-6-luna-${index}`,
+  );
+  mount();
+  fireEvent.keyDown(
+    screen.getByRole("button", { name: "Chat model: OpenAI, GPT 5.4" }),
+    { key: "ArrowDown" },
+  );
+  fireEvent.change(
+    await screen.findByRole("textbox", { name: "Search models" }),
+    {
+      target: { value: "luna" },
+    },
+  );
+  const showMore = await screen.findByRole("menuitem", {
+    name: "Show more models",
+  });
+  expect(screen.getAllByRole("menuitem")).toHaveLength(51);
+  fireEvent.click(showMore);
+  await waitFor(() =>
+    expect(screen.getAllByRole("menuitem")).toHaveLength(101),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: "Show more models" }));
+  await waitFor(() =>
+    expect(screen.getAllByRole("menuitem")).toHaveLength(120),
+  );
+  expect(
+    screen.queryByRole("menuitem", { name: "Show more models" }),
+  ).toBeNull();
 });

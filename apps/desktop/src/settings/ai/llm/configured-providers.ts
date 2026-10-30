@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 
+import { providerCredentialIdentity } from "@anlg/provider-validation";
+
 import { type Provider, PROVIDERS } from "./shared";
 import {
   isSubscriptionProviderId,
@@ -41,6 +43,7 @@ import { useConfigValues } from "~/shared/config";
 
 type ProviderStatus = {
   configured: boolean;
+  modelScope?: string;
   availabilityPending?: boolean;
   listModels?: () => Promise<ListModelsResult>;
 };
@@ -96,6 +99,12 @@ export function getLlmProviderStatus({
     }
   }
 
+  const modelScope = providerCredentialIdentity({
+    provider: provider.id,
+    baseUrl,
+    apiKey,
+  });
+
   if (provider.id === "anarlog") {
     const result: ListModelsResult = {
       models: ANARLOG_PRO_LLM_MODELS.map(({ id }) => id),
@@ -107,7 +116,7 @@ export function getLlmProviderStatus({
         ]),
       ),
     };
-    return { configured: true, listModels: async () => result };
+    return { configured: true, modelScope, listModels: async () => result };
   }
 
   let listModelsFunc: () => Promise<ListModelsResult>;
@@ -183,6 +192,7 @@ export function getLlmProviderStatus({
 
   return {
     configured: true,
+    modelScope,
     listModels: async () => removeNonStreamingModels(await listModelsFunc()),
   };
 }

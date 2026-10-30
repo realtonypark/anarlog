@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMutation } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { CaretDown, Check, MagnifyingGlass } from "@anlg/ui/components/icons";
 import { Button } from "@anlg/ui/components/ui/button";
@@ -8,7 +8,9 @@ import {
   AppFloatingPanel,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -155,6 +157,7 @@ function ModelMenu({
               key={provider.id}
               provider={provider}
               listModels={providers[provider.id].listModels}
+              modelScope={providers[provider.id].modelScope}
               query={query.trim().toLocaleLowerCase()}
               selectedModel={
                 selection.providerId === provider.id
@@ -176,12 +179,14 @@ function ModelMenu({
 function ProviderModels({
   provider,
   listModels,
+  modelScope,
   selectedModel,
   query,
   onSelect,
 }: {
   provider: Provider;
   listModels?: () => Promise<ListModelsResult>;
+  modelScope?: string;
   selectedModel?: string;
   query: string;
   onSelect: (model: string) => void;
@@ -192,24 +197,29 @@ function ProviderModels({
     listModels,
     {
       enabled: open || query.length > 0,
+      scope: modelScope,
     },
   );
   const providerMatches = `${provider.id} ${provider.displayName}`
     .toLocaleLowerCase()
     .includes(query);
-  const models = data?.models ?? [];
-  const options = (
-    selectedModel && !models.includes(selectedModel)
-      ? [selectedModel, ...models]
-      : models
-  ).filter(
-    (model) =>
-      (provider.id !== "anarlog" || model !== "Auto") &&
-      (providerMatches ||
-        `${model} ${displayLlmModelId(provider.id, model)}`
-          .toLocaleLowerCase()
-          .includes(query)),
-  );
+  const models = useMemo(() => {
+    const ids = data?.models ?? [];
+    const available =
+      selectedModel && !ids.includes(selectedModel)
+        ? [selectedModel, ...ids]
+        : ids;
+    return available
+      .filter((id) => provider.id !== "anarlog" || id !== "Auto")
+      .map((id) => {
+        const label = displayLlmModelId(provider.id, id);
+        return { id, label, searchText: `${id} ${label}`.toLocaleLowerCase() };
+      });
+  }, [data?.models, provider.id, selectedModel]);
+  const options =
+    query && !providerMatches
+      ? models.filter(({ searchText }) => searchText.includes(query))
+      : models;
 
   if (
     query &&
@@ -219,6 +229,36 @@ function ProviderModels({
     options.length === 0
   )
     return null;
+
+  const modelItems =
+    query || open ? (
+      <ModelItems
+        key={query}
+        models={options}
+        selectedModel={selectedModel}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={() => {
+          void refetch();
+        }}
+        onSelect={onSelect}
+      />
+    ) : null;
+
+  if (query) {
+    return (
+      <DropdownMenuGroup
+        aria-label={provider.displayName}
+        className="border-app-floating-border not-first:mt-1 not-first:border-t not-first:pt-1"
+      >
+        <DropdownMenuLabel className="text-muted-foreground flex items-center gap-2">
+          <ProviderIconSlot>{provider.icon}</ProviderIconSlot>
+          {provider.displayName}
+        </DropdownMenuLabel>
+        {modelItems}
+      </DropdownMenuGroup>
+    );
+  }
 
   return (
     <DropdownMenuSub open={open} onOpenChange={setOpen}>
@@ -232,46 +272,81 @@ function ProviderModels({
           className="w-72 max-w-[calc(100vw-2rem)]"
         >
           <AppFloatingPanel className="max-h-[min(20rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto p-1">
-            {isLoading && (
-              <DropdownMenuItem disabled>
-                <Trans>Loading models...</Trans>
-              </DropdownMenuItem>
-            )}
-            {isError && (
-              <DropdownMenuItem
-                onSelect={(event) => {
-                  event.preventDefault();
-                  void refetch();
-                }}
-              >
-                <Trans>Could not load models. Retry</Trans>
-              </DropdownMenuItem>
-            )}
-            {!isLoading && !isError && options.length === 0 && (
-              <DropdownMenuItem disabled>
-                <Trans>No models available.</Trans>
-              </DropdownMenuItem>
-            )}
-            {options.map((model) => (
-              <DropdownMenuItem
-                key={model}
-                onSelect={(event) => {
-                  event.preventDefault();
-                  onSelect(model);
-                }}
-                aria-current={selectedModel === model ? "true" : undefined}
-              >
-                <span className="min-w-0 flex-1 truncate" title={model}>
-                  {displayLlmModelId(provider.id, model)}
-                </span>
-                {selectedModel === model && (
-                  <Check className="size-4 shrink-0" aria-hidden="true" />
-                )}
-              </DropdownMenuItem>
-            ))}
+            {modelItems}
           </AppFloatingPanel>
         </DropdownMenuSubContent>
       </DropdownMenuPortal>
     </DropdownMenuSub>
+  );
+}
+
+function ModelItems({
+  models,
+  selectedModel,
+  isLoading,
+  isError,
+  onRetry,
+  onSelect,
+}: {
+  models: { id: string; label: string }[];
+  selectedModel?: string;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  onSelect: (model: string) => void;
+}) {
+  // ponytail: 50 rows per batch; virtualize if users routinely browse whole catalogs.
+  const batchSize = 50;
+  const [visibleCount, setVisibleCount] = useState(batchSize);
+  return (
+    <>
+      {isLoading && (
+        <DropdownMenuItem disabled>
+          <Trans>Loading models...</Trans>
+        </DropdownMenuItem>
+      )}
+      {isError && (
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            onRetry();
+          }}
+        >
+          <Trans>Could not load models. Retry</Trans>
+        </DropdownMenuItem>
+      )}
+      {!isLoading && !isError && models.length === 0 && (
+        <DropdownMenuItem disabled>
+          <Trans>No models available.</Trans>
+        </DropdownMenuItem>
+      )}
+      {models.slice(0, visibleCount).map(({ id, label }) => (
+        <DropdownMenuItem
+          key={id}
+          onSelect={(event) => {
+            event.preventDefault();
+            onSelect(id);
+          }}
+          aria-current={selectedModel === id ? "true" : undefined}
+        >
+          <span className="min-w-0 flex-1 truncate" title={id}>
+            {label}
+          </span>
+          {selectedModel === id && (
+            <Check className="size-4 shrink-0" aria-hidden="true" />
+          )}
+        </DropdownMenuItem>
+      ))}
+      {models.length > visibleCount && (
+        <DropdownMenuItem
+          onSelect={(event) => {
+            event.preventDefault();
+            setVisibleCount((count) => count + batchSize);
+          }}
+        >
+          <Trans>Show more models</Trans>
+        </DropdownMenuItem>
+      )}
+    </>
   );
 }

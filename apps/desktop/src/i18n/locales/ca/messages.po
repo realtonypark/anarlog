@@ -5509,6 +5509,10 @@ msgstr ""
 msgid "Show meeting times as 14:00 instead of 2:00 PM."
 msgstr "Mostra les hores de les reunions com a 14:00 en lloc de 2:00 PM."
 
+#: src/chat/components/model-selector.tsx
+msgid "Show more models"
+msgstr ""
+
 #: src/settings/general/app-settings.tsx
 msgid "Show release notes"
 msgstr ""
