@@ -1,0 +1,274 @@
+apps/desktop/src/i18n/locales/es/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ka/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/mn/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ny/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/fa/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/km/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/bo/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ko/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/llm/select.tsx
+  s_45b63120742dde::t_9480e8027937b4 25
+  s_45b63120742dde::t_442184edbb6fdc 159-165,176-178,420-421
+  s_45b63120742dde::t_1646dcaf647a4a 422
+apps/desktop/src/i18n/locales/kk/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ku/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/mi/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/mr/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/lb/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/chat/components/model-selector.test.tsx
+  s_45b63120742dde::t_6a0bb704e4e5f4 108-115,117-118
+  s_45b63120742dde::t_e9129363fdc96d 15-19,50
+  s_45b63120742dde::t_1f27e8328bcd35 42-45,49,51-52,57,160-191
+  s_45b63120742dde::t_40703d848d5763 192
+apps/desktop/src/i18n/locales/nl/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ga/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/jv/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/gl/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ig/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ba/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/cy/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/eu/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/he/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/it/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ky/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/chat/components/model-selector.tsx
+  s_45b63120742dde::t_cc4ec9f2d83d80 208-211,219-222,233-246,283-290,303-322,326-329,332-337,341-346
+  s_45b63120742dde::t_be091f671c8200 3,206-207,212-218,282,291-302,323-325,330-331,338-340,347-350
+  s_45b63120742dde::t_ddd2813ea8c425 160,182,189,200
+  s_45b63120742dde::t_56ceb750e20a99 250-253
+  s_45b63120742dde::t_879b26f952346b 11,13,247-249,254-262,275
+  s_45b63120742dde::t_132352f7859f61 351-352
+apps/desktop/src/i18n/locales/de/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/et/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/fi/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/shared/model-combobox.tsx
+  s_45b63120742dde::t_442184edbb6fdc 108-111
+  s_45b63120742dde::t_b3c251213e9752 82,92
+apps/desktop/src/i18n/locales/la/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ms/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/fr/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/kn/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ar/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ml/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/id/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/hi/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/lo/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/shared/list-venice.test.ts
+  s_45b63120742dde::t_0b93f806350694 40,43
+apps/desktop/src/ai/hooks/useModelMetadata.ts
+  s_45b63120742dde::t_479b18e8937a8d 13-14
+  s_45b63120742dde::t_442184edbb6fdc 17
+  s_45b63120742dde::t_14f34a26c9b76e 1,8-12,15-16,18-23,29,33-34
+apps/desktop/src/i18n/locales/mg/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/el/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/shared/list-common.test.ts
+  s_45b63120742dde::t_6830ae2787b98a 1-4,7,16-26,35
+  s_45b63120742dde::t_b0c45b6aacbec2 27-29,32-34
+  s_45b63120742dde::t_edd5e2425ff747 36-37
+  s_45b63120742dde::t_3837cfbae42cd3 30-31
+apps/desktop/src/i18n/locales/af/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/gu/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/no/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/cs/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/az/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/shared/list-common.ts
+  s_45b63120742dde::t_d1083d436025f5 107-108
+apps/desktop/src/i18n/locales/bg/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/settings/ai/llm/configured-providers.ts
+  s_45b63120742dde::t_3d095bdac4099f 3-4,46,119,195
+  s_45b63120742dde::t_442184edbb6fdc 102-106
+  s_45b63120742dde::t_e6ca1d8a0b82aa 107
+apps/desktop/src/i18n/locales/ha/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/mt/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/nn/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/hu/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ja/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/br/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/hy/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/is/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/mk/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/hr/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ht/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ne/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/am/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/as/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/lg/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/lt/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/bn/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/da/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ln/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/lv/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/be/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/en/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/my/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/ai/hooks/useModelMetadata.test.tsx
+  s_45b63120742dde::t_442184edbb6fdc 10-19,21-22,24-30,33-42
+  s_45b63120742dde::t_7c15f0f2fe0166 1-9,20,23,31-32,43-45
+apps/desktop/src/i18n/locales/bs/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ca/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/fo/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/ff/messages.po
+  s_45b63120742dde::t_aa58e88ab3fbd4 5512-5515
+apps/desktop/src/i18n/locales/oc/messages.po
+  s_45b63120742dde::t_edf85c019d3fb9 5512-5515
+apps/desktop/src/i18n/locales/or/messages.po
+  s_45b63120742dde::t_ffa8e7e73e7e1c 5512-5515
+apps/desktop/src/i18n/locales/pa/messages.po
+  s_45b63120742dde::t_2e37b41e35f712 5512-5515
+apps/desktop/src/i18n/locales/pl/messages.po
+  s_45b63120742dde::t_821392c9770d5d 5512-5515
+apps/desktop/src/i18n/locales/ps/messages.po
+  s_45b63120742dde::t_041ac1feff9fd0 5512-5515
+apps/desktop/src/i18n/locales/pt/messages.po
+  s_45b63120742dde::t_d734c216bb7bf6 5512-5515
+apps/desktop/src/i18n/locales/ro/messages.po
+  s_45b63120742dde::t_a50d878d378162 5512-5515
+apps/desktop/src/i18n/locales/ru/messages.po
+  s_45b63120742dde::t_d8dc94282b845d 5512-5515
+apps/desktop/src/i18n/locales/sa/messages.po
+  s_45b63120742dde::t_db5c420d7dbe4f 5512-5515
+apps/desktop/src/i18n/locales/sd/messages.po
+  s_45b63120742dde::t_c4f33815038431 5512-5515
+apps/desktop/src/i18n/locales/si/messages.po
+  s_45b63120742dde::t_9e35a2c30459a3 5512-5515
+apps/desktop/src/i18n/locales/sk/messages.po
+  s_45b63120742dde::t_17b8690900c6e9 5512-5515
+apps/desktop/src/i18n/locales/sl/messages.po
+  s_45b63120742dde::t_74cfb889ece205 5512-5515
+apps/desktop/src/i18n/locales/sn/messages.po
+  s_45b63120742dde::t_6a0ad0a8b6e671 5512-5515
+apps/desktop/src/i18n/locales/so/messages.po
+  s_45b63120742dde::t_d075a4f9c3040f 5512-5515
+apps/desktop/src/i18n/locales/sq/messages.po
+  s_45b63120742dde::t_0553eedc5b82c2 5512-5515
+apps/desktop/src/i18n/locales/sr/messages.po
+  s_45b63120742dde::t_e534b220c5890c 5512-5515
+apps/desktop/src/i18n/locales/su/messages.po
+  s_45b63120742dde::t_d70bf71019d086 5512-5515
+apps/desktop/src/i18n/locales/sv/messages.po
+  s_45b63120742dde::t_ccec6e0bba431d 5512-5515
+apps/desktop/src/i18n/locales/sw/messages.po
+  s_45b63120742dde::t_338271ee4adac9 5512-5515
+apps/desktop/src/i18n/locales/ta/messages.po
+  s_45b63120742dde::t_cc8cbf7309d5b1 5512-5515
+apps/desktop/src/i18n/locales/te/messages.po
+  s_45b63120742dde::t_3a72989beb77ea 5512-5515
+apps/desktop/src/i18n/locales/tg/messages.po
+  s_45b63120742dde::t_2467e94e047bd2 5512-5515
+apps/desktop/src/i18n/locales/th/messages.po
+  s_45b63120742dde::t_ba8da3d5ad1ce3 5512-5515
+apps/desktop/src/i18n/locales/tk/messages.po
+  s_45b63120742dde::t_c44e7afce1c3a7 5512-5515
+apps/desktop/src/i18n/locales/tl/messages.po
+  s_45b63120742dde::t_20582d0738e663 5512-5515
+apps/desktop/src/i18n/locales/tr/messages.po
+  s_45b63120742dde::t_7fa3519d48c3bc 5512-5515
+apps/desktop/src/i18n/locales/tt/messages.po
+  s_45b63120742dde::t_3050252dbfcba2 5512-5515
+apps/desktop/src/i18n/locales/uk/messages.po
+  s_45b63120742dde::t_524930c6b6f8e1 5512-5515
+apps/desktop/src/i18n/locales/ur/messages.po
+  s_45b63120742dde::t_9ab9574faf0709 5512-5515
+apps/desktop/src/i18n/locales/uz/messages.po
+  s_45b63120742dde::t_50aa43c2f44848 5512-5515
+apps/desktop/src/i18n/locales/vi/messages.po
+  s_45b63120742dde::t_8fca8762753037 5512-5515
+apps/desktop/src/i18n/locales/wo/messages.po
+  s_45b63120742dde::t_113389108a78fe 5512-5515
+apps/desktop/src/i18n/locales/xh/messages.po
+  s_45b63120742dde::t_86ef4bc9f2b65b 5512-5515
+apps/desktop/src/i18n/locales/yi/messages.po
+  s_45b63120742dde::t_0badca11ce69a3 5512-5515
+apps/desktop/src/i18n/locales/yo/messages.po
+  s_45b63120742dde::t_c9c9a7c98f89f3 5512-5515
+apps/desktop/src/i18n/locales/zh/messages.po
+  s_45b63120742dde::t_d1a98f75626bd1 5512-5515
+apps/desktop/src/i18n/locales/zu/messages.po
+  s_45b63120742dde::t_183d8463fc5364 5512-5515
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "44f542336f523abe8675f7b9d6234e37ab2904da",
+  "prompts": {},
+  "sessions": {
+    "s_45b63120742dde": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a18e82-220d-7795-9525-2477f2186af4",
+        "model": "deepseek-v4p1-flash-1017"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
